@@ -1,32 +1,33 @@
-# Bottled AI 中文版
+# Bottled AI - 改进版（中文支持）
 
-基于 [Bottled AI](https://github.com/xaved88/bottled_ai) 修改，添加了**中文游戏语言**支持。
+基于 [bottled-ai-chinese](https://github.com/gdw1986/bottled-ai-chinese) 继续改进，在中文语言支持的基础上，提升 AI 的战斗决策、牌组构建和地图路径规划能力。
 
-Slay the Spire（杀戮尖塔）自动打牌机器人，支持在中文游戏界面下正常运行。
+上游链路：`xaved88/bottled_ai` → `gdw1986/bottled-ai-chinese` → **本项目**
 
-## 与原版的区别
+---
 
-原版 Bottled AI 仅支持英文游戏语言。在中文环境下会出现以下问题：
+## 改进计划
 
-| 问题 | 现象 | 修复方案 |
-|------|------|----------|
-| 编码错误 | stdin 读取中文 JSON 时 `UnicodeDecodeError` | 改用 `sys.stdin.buffer` 读写 UTF-8 |
-| 日志乱码 | 含中文的日志写入时 `UnicodeEncodeError` | 所有 `open()` 添加 `encoding='utf-8'` |
-| 卡牌匹配失败 | `choice_list` 返回中文名（如"打击"），bot 无法匹配英文名 | 自动利用 `card.id`（始终英文）翻译回英文 |
-| choose 命令失败 | CommunicationMod 不认识中文名（如 `choose 攻击`） | 统一改用数字索引（如 `choose 0`） |
+### ✅ 已完成（来自 bottled-ai-chinese）
 
-### 修改的文件
+| 问题 | 修复方案 |
+|------|----------|
+| `UnicodeDecodeError` | 改用 `sys.stdin.buffer` 读写 UTF-8 |
+| 日志乱码 | 所有 `open()` 添加 `encoding='utf-8'` |
+| 卡牌匹配失败 | 用 `card.id`（始终英文）翻译中文名 |
+| `choose` 命令失败 | 统一改用数字索引 |
 
-- `main.py` — 添加 stdin/stdout UTF-8 编码
-- `rs/api/client.py` — 用 buffer 读写绕过 `input()` 的编码问题
-- `rs/helper/logger.py` — 日志写入 UTF-8
-- `rs/machine/state.py` — 核心翻译层：`_build_choice_name_map()` 自动翻译
-- `rs/common/handlers/common_upgrade_handler.py` — 升级选择改用索引
-- `rs/common/handlers/common_neow_handler.py` — Neow 事件改用索引
-- `rs/common/handlers/common_campfire_handler.py` — 篝火改用索引
-- `rs/common/handlers/common_mass_discard_handler.py` — 批量弃牌改用索引
-- `rs/common/handlers/common_shop_entrance_handler.py` — 商店入口改用索引
-- `rs/common/handlers/common_event_handler.py` — 5 个事件处理改用索引
+### 🚧 进行中 / 计划中
+
+| 方向 | 说明 |
+|------|------|
+| **战斗评估函数（Comparator）** | 加入敌人意图感知、姿态价值、跨回合威胁评估 |
+| **动态卡牌拾取** | 根据当前牌组状态动态调整 `DESIRED_CARDS_FOR_DECK` |
+| **地图路径权重动态化** | 根据 HP、牌组实力动态调整精英/休息的吸引力 |
+| **药水使用时机优化** | 在高价值时机主动使用普通战斗中的药水 |
+| **中文事件特判** | 对高风险事件做硬编码安全选项 |
+
+---
 
 ## 安装
 
@@ -50,45 +51,47 @@ Slay the Spire（杀戮尖塔）自动打牌机器人，支持在中文游戏界
 
 1. 将本仓库克隆到游戏安装目录下的 `bottled_ai` 文件夹：
    ```
-   E:\Steam\steamapps\common\SlayTheSpire\bottled_ai
+   C:\Program Files (x86)\Steam\steamapps\common\SlayTheSpire\bottled_ai
    ```
-2. 启动游戏并启用上述 Mod（会生成 Mod 配置文件）。
+2. 启动游戏并启用上述 Mod。
 3. 找到 CommunicationMod 配置目录：
    - Windows: `%LOCALAPPDATA%\ModTheSpire\`
    - macOS: `~/Library/Preferences/ModTheSpire/`
 4. 编辑 `CommunicationMod/config.properties`，添加：
    ```
-   command=python .\\bottled_ai\\main.py
+   command=python .\bottled_ai\main.py
    ```
 
 ### 启动机器人
 
-在游戏主菜单中：
+在游戏主菜单：**Mods → Communication Mod → Config → Start external process**
 
-1. **Mods** → **Communication Mod** → **Config** → **Start external process**
+可在 `main.py` 中配置运行参数（角色策略、局数、种子等）。
 
-可在 `main.py` 中配置运行参数（角色策略、次数、种子等）。
-
-> 超时时间为 10 秒，如果启动后无反应，请查看 ModTheSpire 控制台或 `communication_mod_errors.log`。
+---
 
 ## 配置
 
-- **策略选择**：在 `main.py` 中修改 `strategy` 变量，可选策略：
-  - `PEACEFUL_PUMMELING`（静观其变，观者角色，推荐）
-  - `CLAW_IS_LAW`
-  - `PWNDER_MY_ORBS`
-  - `REQUESTED_STRIKE`
-  - `SHIVS_AND_GIGGLES`
+- **策略选择**：在 `main.py` 中修改 `ALL_STRATEGIES`，可选：
+  - `PEACEFUL_PUMMELING`（观者，推荐）
+  - `CLAW_IS_LAW`（铁甲战士爪爪流）
+  - `PWNDER_MY_ORBS`（故障机器人球球流）
+  - `REQUESTED_STRIKE`（铁甲战士打击流）
+  - `SHIVS_AND_GIGGLES`（静默猎人飞刀流）
 - **暂停机器人**：编辑 `run_controller.txt`
 - **调整操作速度**：编辑 `presentation_config.py`
 
+---
+
 ## 已知限制
 
-- 部分事件（EVENT）的中文选项标签无法自动翻译，会 fallback 到默认行为（选第一项）
-- 四角色（Defect/Silent/Ironclad）的中文支持未经完整测试
-- `has_relic()` 等基于 name 匹配的方法理论上不受影响（遗物 name 在 JSON 中保持英文）
+- 部分中文事件选项无法自动翻译，会 fallback 到选第一项
+- 四角色的中文支持完整度不一（观者测试最多）
+
+---
 
 ## 致谢
 
 - 原项目 [Bottled AI](https://github.com/xaved88/bottled_ai) by xaved88
-- [Communication Mod](https://steamcommunity.com/sharedfiles/filedetails/?id=2131373661) — 提供 bot 与游戏之间的通信接口
+- 中文适配 [bottled-ai-chinese](https://github.com/gdw1986/bottled-ai-chinese)
+- [Communication Mod](https://steamcommunity.com/sharedfiles/filedetails/?id=2131373661)
