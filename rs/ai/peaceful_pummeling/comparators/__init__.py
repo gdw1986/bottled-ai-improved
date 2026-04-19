@@ -1,0 +1,2 @@
+# Peaceful Pummeling Improved Comparators
+from rs.ai.peaceful_pummeling.comparators.watcher_improved_comparator import WatcherImprovedComparator

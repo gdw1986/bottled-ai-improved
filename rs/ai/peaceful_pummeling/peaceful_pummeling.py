@@ -10,7 +10,7 @@ from rs.ai.peaceful_pummeling.handlers.potions_handler import PotionsBossHandler
 from rs.ai.peaceful_pummeling.handlers.shop_purchase_handler import ShopPurchaseHandler
 from rs.ai.peaceful_pummeling.handlers.upgrade_handler import UpgradeHandler
 from rs.common.handlers.common_astrolabe_handler import CommonAstrolabeHandler
-from rs.common.handlers.common_battle_handler import CommonBattleHandler
+from rs.ai.peaceful_pummeling.handlers.peaceful_battle_handler import PeacefulBattleHandler
 from rs.common.handlers.common_campfire_handler import CommonCampfireHandler
 from rs.common.handlers.common_chest_handler import CommonChestHandler
 from rs.common.handlers.common_combat_reward_handler import CommonCombatRewardHandler
@@ -35,7 +35,7 @@ PEACEFUL_PUMMELING: AiStrategy = AiStrategy(
     character=Character.WATCHER,
     handlers=peaceful_pummeling_potion_handlers + [
         CommonAstrolabeHandler(CARD_REMOVAL_PRIORITY_LIST),
-        CommonBattleHandler(),
+        PeacefulBattleHandler(),
         BossRelicHandler(),
         UpgradeHandler(),
         CommonTransformHandler(CARD_REMOVAL_PRIORITY_LIST),
