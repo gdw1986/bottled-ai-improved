@@ -15,7 +15,7 @@ from rs.common.handlers.common_campfire_handler import CommonCampfireHandler
 from rs.common.handlers.common_chest_handler import CommonChestHandler
 from rs.common.handlers.common_combat_reward_handler import CommonCombatRewardHandler
 from rs.common.handlers.common_mass_discard_handler import CommonMassDiscardHandler
-from rs.common.handlers.common_map_handler import CommonMapHandler
+from rs.ai.peaceful_pummeling.handlers.peaceful_map_handler import PeacefulMapHandler
 from rs.common.handlers.common_purge_handler import CommonPurgeHandler
 from rs.common.handlers.common_scry_handler import CommonScryHandler
 from rs.common.handlers.common_shop_entrance_handler import CommonShopEntranceHandler
@@ -45,7 +45,7 @@ PEACEFUL_PUMMELING: AiStrategy = AiStrategy(
         NeowHandler(),
         EventHandler(removal_priority_list=CARD_REMOVAL_PRIORITY_LIST, cards_desired_for_deck=DESIRED_CARDS_FOR_DECK),
         CommonChestHandler(),
-        CommonMapHandler(),
+        PeacefulMapHandler(),
         CommonCampfireHandler(HIGH_PRIORITY_UPGRADES, CARD_REMOVAL_PRIORITY_LIST),
         CommonShopEntranceHandler(),
         ShopPurchaseHandler(),
