@@ -47,15 +47,16 @@ class ShopPurchaseHandler(Handler):
     def find_choice(self, state: GameState) -> str:
         gold = state.game_state()['gold']
         screen_state = state.game_state()['screen_state']
-        can_purge = screen_state['purge_available'] and gold >= screen_state['purge_cost']
+        can_purge = screen_state.get('purge_available', False) and gold >= screen_state.get('purge_cost', 999)
+        choice_list = state.get_choice_list()
 
-        # 0. Kunai/Shuriken
-        for relic in screen_state['relics']:
-            if relic['name'] == 'Kunai' and gold >= relic['price']:
+        # 0. Kunai/Shuriken (match by id, always English)
+        for relic in screen_state.get('relics', []):
+            if relic.get('id') == 'Kunai' and gold >= relic.get('price', 999):
                 return "kunai"
 
-        for relic in screen_state['relics']:
-            if relic['name'] == 'Shuriken' and gold >= relic['price']:
+        for relic in screen_state.get('relics', []):
+            if relic.get('id') == 'Shuriken' and gold >= relic.get('price', 999):
                 return "shuriken"
 
         # 1. Purge curses
@@ -63,23 +64,32 @@ class ShopPurchaseHandler(Handler):
             return "purge"
 
         # 2. Membership Card
-        for relic in screen_state['relics']:
-            if relic['name'] == 'Membership Card' and gold >= relic['price']:
+        for relic in screen_state.get('relics', []):
+            if relic.get('id') == 'Membership Card' and gold >= relic.get('price', 999):
                 return "membership card"
 
-        # 3. Cards based on list
+        # 3. Cards based on list (match by id)
         deck_card_list = state.get_deck_card_list_by_id()
         for p in self.cards_to_buy:
-            for card in screen_state['cards']:
-                if card['id'] == p and gold >= card['price']:
-                    if p.lower not in deck_card_list:
-                        return card['name'].lower()
+            for card in screen_state.get('cards', []):
+                if card.get('id') == p and gold >= card.get('price', 999):
+                    if p.lower() not in deck_card_list:
+                        # Return the localized name from choice_list (already translated by get_choice_list)
+                        card_name = card.get('name', '').lower()
+                        if card_name in choice_list:
+                            return card_name
+                        # Fallback: find by matching id in screen_state.cards
+                        for idx, choice in enumerate(choice_list):
+                            if choice == card_name:
+                                return choice
 
-        # 4. Relics based on list
+        # 4. Relics based on list (match by id)
         for p in self.relics_to_buy:
-            for relic in screen_state['relics']:
-                if relic['name'] == p and gold >= relic['price']:
-                    return relic['name'].lower()
+            for relic in screen_state.get('relics', []):
+                if relic.get('id') == p and gold >= relic.get('price', 999):
+                    relic_name = relic.get('name', '').lower()
+                    if relic_name in choice_list:
+                        return relic_name
 
         # 5. Purge basics
         if can_purge and state.deck.contains_cards(CARD_REMOVAL_PRIORITY_LIST):

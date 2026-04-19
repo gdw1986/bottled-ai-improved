@@ -20,7 +20,7 @@ run_seeds = [
     #'LGZ12EEMFGUK',
 ]
 run_amount = 1
-strategy = PEACEFUL_PUMMELING
+strategy = CLAW_IS_LAW
 
 if __name__ == "__main__":
     init_log()
