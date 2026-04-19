@@ -1,10 +1,22 @@
 import os
 import shutil
+import subprocess
 
 from datetime import datetime
 from typing import List
 
 from definitions import ROOT_DIR
+
+
+def _get_git_commit() -> str:
+    """获取当前 git commit hash（7位）。失败时返回 'unknown'。"""
+    try:
+        return subprocess.check_output(
+            ['git', 'rev-parse', '--short=7', 'HEAD'],
+            cwd=ROOT_DIR, stderr=subprocess.DEVNULL, text=True
+        ).strip()
+    except Exception:
+        return 'unknown'
 from rs.calculator.enums.card_id import CardId
 from rs.calculator.interfaces.memory_items import MemoryItem, ResetSchedule
 from rs.helper.seed import get_seed_string
@@ -91,7 +103,9 @@ def log_missing_calculator_enums_to_run():
 
 
 def log_run_results(state: GameState, elites: List[str], bosses: List[str], strategy_name: str):
-    message = "Seed:" + get_seed_string(state.game_state()['seed'])
+    commit = _get_git_commit()
+    message = "Commit:" + commit
+    message += ", Seed:" + get_seed_string(state.game_state()['seed'])
     message += ", Floor:" + str(state.floor())
     message += ", Score:" + str(state.game_state()['screen_state']['score'])
     message += ", Strat: " + strategy_name
@@ -116,8 +130,9 @@ def log_run_results(state: GameState, elites: List[str], bosses: List[str], stra
 
 
 def log_new_run_sequence():
+    commit = _get_git_commit()
     with open(ROOT_DIR + "/logs/run_history.log", 'a+', encoding='utf-8') as f:
-        f.write("-------------------------\n")
+        f.write(f"----- commit:{commit} -----\n")
 
 
 def log(message, filename="default", encoding='utf-8'):
