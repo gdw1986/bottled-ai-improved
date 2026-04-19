@@ -202,7 +202,6 @@ improved_comparisons: List[Comparison] = [
     most_ethereal_cards_saved_for_later,
     most_powered_up_claws,
     least_powered_down_steam_barrier,
-    most_energy,
     preserve_revive_options,
     killed_with_lesson_learned,
     avoid_inconvenient_time_warp,
