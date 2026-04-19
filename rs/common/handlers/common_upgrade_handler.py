@@ -28,11 +28,14 @@ class CommonUpgradeHandler(Handler):
         transformed_priorities = self.upgrade_priorities.copy()
         self.transform_priorities_based_on_game_state(transformed_priorities, state)
 
+        # Use get_choice_list() for matching (auto-translated to English), but use raw list for index
+        translated_list = state.get_choice_list()
         for priority in transformed_priorities:
-            if priority in choice_list:
+            if priority in translated_list:
+                idx = translated_list.index(priority)
                 if presentation_mode:
-                    return HandlerAction(commands=[p_delay, "choose " + priority, p_delay_s])
-                return HandlerAction(commands=["choose " + priority])
+                    return HandlerAction(commands=[p_delay, "choose " + str(idx), p_delay_s])
+                return HandlerAction(commands=["choose " + str(idx)])
         if presentation_mode:
-            return HandlerAction(commands=[p_delay, "choose " + choice_list[0], p_delay_s])
-        return HandlerAction(commands=["choose " + choice_list[0]])
+            return HandlerAction(commands=[p_delay, "choose 0", p_delay_s])
+        return HandlerAction(commands=["choose 0"])

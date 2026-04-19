@@ -18,11 +18,7 @@ class CommonCampfireHandler(Handler):
         return state.has_command(Command.CHOOSE) and state.screen_type() == ScreenType.REST.value
 
     def handle(self, state: GameState) -> HandlerAction:
-        can_rest = 'rest' in state.get_choice_list()
-        can_toke = 'toke' in state.get_choice_list()
-        can_lift = 'lift' in state.get_choice_list()
-        can_dig = 'dig' in state.get_choice_list()
-        can_smith = 'smith' in state.get_choice_list()
+        choice_list = state.get_choice_list()
 
         # pantograph
         pantograph_trigger_floors = [15, 32, 49]
@@ -34,25 +30,26 @@ class CommonCampfireHandler(Handler):
         worth_healing = state.get_player_health_percentage() <= 0.6 and not pantograph_will_cover_it
         worth_healing_floor_49 = state.floor() == 49 and state.get_player_health_percentage() <= 0.85 \
                                  and not pantograph_will_cover_floor_49
-        important_upgrade_available = state.deck.contains_cards(self.high_priority_upgrades) and can_smith
+        important_upgrade_available = state.deck.contains_cards(self.high_priority_upgrades) and 'smith' in choice_list
 
-        choice = "0"
+        desired_choice = "rest"
 
-        if can_rest and (worth_healing or worth_healing_floor_49):
-            choice = "rest"
-        elif can_toke and state.deck.contains_curses_we_can_remove():
-            choice = "toke"
-        elif can_smith and important_upgrade_available:
-            choice = "smith"
-        elif can_lift and state.get_relic_counter("Girya") < 2:
-            choice = "lift"
-        elif can_dig:
-            choice = "dig"
-        elif can_smith:
-            choice = 'smith'
-        elif can_toke and state.deck.contains_cards(self.card_removal_priorities):
-            choice = "toke"
+        if 'rest' in choice_list and (worth_healing or worth_healing_floor_49):
+            desired_choice = "rest"
+        elif 'toke' in choice_list and state.deck.contains_curses_we_can_remove():
+            desired_choice = "toke"
+        elif 'smith' in choice_list and important_upgrade_available:
+            desired_choice = "smith"
+        elif 'lift' in choice_list and state.get_relic_counter("Girya") < 2:
+            desired_choice = "lift"
+        elif 'dig' in choice_list:
+            desired_choice = "dig"
+        elif 'smith' in choice_list:
+            desired_choice = 'smith'
+        elif 'toke' in choice_list and state.deck.contains_cards(self.card_removal_priorities):
+            desired_choice = "toke"
 
+        idx = choice_list.index(desired_choice) if desired_choice in choice_list else 0
         if presentation_mode:
-            return HandlerAction(commands=[p_delay, "choose " + choice, p_delay])
-        return HandlerAction(commands=["choose " + choice])
+            return HandlerAction(commands=[p_delay, "choose " + str(idx), p_delay])
+        return HandlerAction(commands=["choose " + str(idx)])

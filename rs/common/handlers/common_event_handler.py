@@ -44,11 +44,13 @@ class CommonEventHandler(Handler):
 
             case Event.THE_CLERIC:
                 if hp_per <= 65 and 'heal' in state.get_choice_list():
-                    return "choose heal"
+                    idx = state.get_choice_list().index('heal')
+                    return "choose " + str(idx)
                 if 'purify' in state.get_choice_list():
-                    return "choose purify"  # Purge
+                    idx = state.get_choice_list().index('purify')
+                    return "choose " + str(idx)
                 if hp_per >= 90:
-                    return "choose leave"  # Heal not worth the money and can't purify apparently
+                    return "choose 0"
                 return "choose 0"
 
             case Event.DEAD_ADVENTURER:
@@ -164,8 +166,12 @@ class CommonEventHandler(Handler):
 
             case Event.COUNCIL_OF_GHOSTS:
                 if state.has_relic("Snecko Eye") or state.deck.contains_cards(["Bite"]):  # Not amazing combos:
-                    return "choose refuse"
-                return "choose accept"  # Become a spooky ghost!
+                    choice_list = state.get_choice_list()
+                    idx = choice_list.index('refuse') if 'refuse' in choice_list else 1
+                    return "choose " + str(idx)
+                choice_list = state.get_choice_list()
+                idx = choice_list.index('accept') if 'accept' in choice_list else 0
+                return "choose " + str(idx)  # Become a spooky ghost!
 
             case Event.CURSED_TOME:
                 return "choose 1"  # Leave, we don't currently make good use of the possible relics.
@@ -180,7 +186,9 @@ class CommonEventHandler(Handler):
                 return "choose 3"  # Leave
 
             case Event.THE_LIBRARY:
-                return "choose sleep"  # Heal, because we currently can't tell the difference between card selection and purging in a grid event.
+                choice_list = state.get_choice_list()
+                idx = choice_list.index('sleep') if 'sleep' in choice_list else 0
+                return "choose " + str(idx)  # Heal
 
             case Event.MASKED_BANDITS:
                 if hp_per >= 65:
@@ -203,23 +211,33 @@ class CommonEventHandler(Handler):
 
             case Event.PLEADING_VAGRANT:
                 if state.get_relic_counter("Omamori") >= 1:
-                    return "choose rob"  # Get curse and relic
+                    choice_list = state.get_choice_list()
+                    idx = choice_list.index('rob') if 'rob' in choice_list else 0
+                    return "choose " + str(idx)  # Get curse and relic
                 elif "offer gold" in state.get_choice_list():
-                    return "choose offer gold"  # 85 gold for random relic
+                    idx = state.get_choice_list().index("offer gold")
+                    return "choose " + str(idx)  # 85 gold for random relic
                 else:
-                    return "choose leave"
+                    choice_list = state.get_choice_list()
+                    idx = choice_list.index('leave') if 'leave' in choice_list else 0
+                    return "choose " + str(idx)
 
             case Event.VAMPIRES:
+                choice_list = state.get_choice_list()
                 if state.deck.contains_cards(["Apparition"]):
-                    return "choose refuse"
+                    idx = choice_list.index('refuse') if 'refuse' in choice_list else 1
+                    return "choose " + str(idx)
                 if state.has_relic("Strike Dummy"):
-                    return "choose refuse"
+                    idx = choice_list.index('refuse') if 'refuse' in choice_list else 1
+                    return "choose " + str(idx)
                 if state.deck.contains_card_amount("strike") >= 3:  # note: these are specifically un-upgraded strikes
                     if state.has_relic("Blood Vial"):
                         return "choose 1"  # Nom the Spire
                     else:
-                        return "choose accept"
-                return "choose refuse"
+                        idx = choice_list.index('accept') if 'accept' in choice_list else 0
+                        return "choose " + str(idx)
+                idx = choice_list.index('refuse') if 'refuse' in choice_list else 1
+                return "choose " + str(idx)
 
             # Act 2, 3
 

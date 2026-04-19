@@ -30,7 +30,7 @@ def init_run_logging(seed: str):
     global current_run_missing_events
     current_run_log_count = 0
     current_run_log_file = "runs/" + dt + "--" + seed
-    with open(ROOT_DIR + "/logs/" + current_run_log_file + ".log", 'x') as file:
+    with open(ROOT_DIR + "/logs/" + current_run_log_file + ".log", 'x', encoding='utf-8') as file:
         file.close()
     log("Seed: " + seed, "calculator_missing_enums")
     current_run_calculator_missing_relics = set()
@@ -49,7 +49,7 @@ def log_to_run(message: str):
     if current_run_log_count > 10000:
         log("Dying due to this seeming to be stuck", current_run_log_file)
         raise Exception("Dying due to this seeming to be stuck...")
-    log(message, current_run_log_file)
+    log(message, current_run_log_file, encoding='utf-8')
 
 
 def log_calculator_missing_relic(relic_id: str):
@@ -111,24 +111,21 @@ def log_run_results(state: GameState, elites: List[str], bosses: List[str], stra
     if sum(state.memory_by_card[CardId.RITUAL_DAGGER][ResetSchedule.GAME].values()) > 10:
         message += " Extraordinary amount of Ritual Dagger power: " + str(sum(state.memory_by_card[CardId.RITUAL_DAGGER][ResetSchedule.GAME].values()))
     message += "\n"
-    with open(ROOT_DIR + "/logs/run_history.log", 'a+') as f:
+    with open(ROOT_DIR + "/logs/run_history.log", 'a+', encoding='utf-8') as f:
         f.write(message)
-        f.close()
 
 
 def log_new_run_sequence():
-    with open(ROOT_DIR + "/logs/run_history.log", 'a+') as f:
+    with open(ROOT_DIR + "/logs/run_history.log", 'a+', encoding='utf-8') as f:
         f.write("-------------------------\n")
-        f.close()
 
 
-def log(message, filename="default"):
-    f = open(ROOT_DIR + "/logs/" + filename + ".log", "a+")
+def log(message, filename="default", encoding='utf-8'):
+    f = open(ROOT_DIR + "/logs/" + filename + ".log", "a+", encoding=encoding)
     f.write(message + "\n")
     f.close()
 
 
 def init_log(filename="default"):
-    with open(ROOT_DIR + "/logs/" + filename + ".log", 'a+') as file:
+    with open(ROOT_DIR + "/logs/" + filename + ".log", 'a+', encoding='utf-8') as file:
         file.truncate(0)
-        file.close()

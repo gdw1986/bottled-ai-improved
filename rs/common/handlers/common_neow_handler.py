@@ -41,9 +41,11 @@ class CommonNeowHandler(Handler):
             return HandlerAction(commands=["choose 0"])
 
         choice_list = state.get_choice_list()
+        raw_choice_list = state.game_state()["choice_list"]
 
         for choice in self.desired_choices:
             if choice in choice_list:
+                idx = choice_list.index(choice)
                 if presentation_mode:
-                    return HandlerAction(commands=[p_delay, "choose " + choice, "wait 30"])
-                return HandlerAction(commands=["choose " + choice, "wait 30"])
+                    return HandlerAction(commands=[p_delay, "choose " + str(idx), "wait 30"])
+                return HandlerAction(commands=["choose " + str(idx), "wait 30"])

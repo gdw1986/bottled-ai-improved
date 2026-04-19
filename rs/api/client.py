@@ -1,3 +1,5 @@
+import sys
+
 from rs.helper.logger import log, log_to_run
 
 
@@ -13,7 +15,9 @@ class Client:
                 log(log_message)
             else:
                 log_to_run(log_message)
-        input_response = input(message + "\n")
+        sys.stdout.buffer.write((message + "\n").encode('utf-8'))
+        sys.stdout.buffer.flush()
+        input_response = sys.stdin.buffer.readline().decode('utf-8', errors='replace').rstrip('\n')
         if not silent:
             log_message = f"Response: {input_response}"
             if before_run:

@@ -14,4 +14,5 @@ class CommonShopEntranceHandler(Handler):
                and state.screen_type() == ScreenType.SHOP_ROOM.value
 
     def handle(self, state: GameState) -> HandlerAction:
-        return HandlerAction(commands=["choose shop", "wait 30"])
+        # choice_list for SHOP_ROOM contains "shop" (or localized), use index 0
+        return HandlerAction(commands=["choose 0", "wait 30"])

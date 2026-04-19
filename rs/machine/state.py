@@ -58,8 +58,80 @@ class GameState:
             return []
         return self.game_state()["combat_state"]["monsters"]
 
+    def _build_choice_name_map(self) -> dict[str, str]:
+        """Build a mapping from localized names in choice_list to English names.
+
+        For card screens (GRID, CARD_REWARD, SHOP_SCREEN, HAND_SELECT): maps Chinese card names
+        to lowercase English card names using screen_state.cards (id field is always English).
+
+        For event screens: maps Chinese option labels to English labels using screen_state.options.
+
+        For rest screens: maps Chinese rest option names to English using screen_state.rest_options.
+        """
+        name_map = {}
+        screen_type = self.game_state().get("screen_type")
+        screen_state = self.game_state().get("screen_state", {})
+
+        # Card-related screens: use card id to build name map
+        if screen_type in ("GRID", "CARD_REWARD", "SHOP_SCREEN", "HAND_SELECT"):
+            cards = screen_state.get("cards", [])
+            for card in cards:
+                cn_name = card.get("name")
+                en_id = card.get("id")
+                if cn_name and en_id:
+                    base_names = {
+                        "Strike_R": "strike", "Strike_G": "strike", "Strike_P": "strike", "Strike": "strike",
+                        "Defend_R": "defend", "Defend_G": "defend", "Defend_P": "defend", "Defend": "defend",
+                    }
+                    if en_id in base_names:
+                        en_name = base_names[en_id]
+                    else:
+                        import re
+                        en_name = re.sub(r'(?<=[a-z])(?=[A-Z])', ' ', en_id).lower()
+                    if card.get("upgrades", 0) > 0:
+                        en_name += "+"
+                    name_map[cn_name] = en_name
+
+        # Event screens: map Chinese labels to lowercase English labels
+        elif screen_type == "EVENT" and "options" in screen_state:
+            for option in screen_state["options"]:
+                cn_label = option.get("label", "").strip().lower()
+                # The English label would be used in choice_list; try to map via choice_index
+                if cn_label:
+                    idx = option.get("choice_index")
+                    if idx is not None and idx < len(self.game_state().get("choice_list", [])):
+                        # We can't reliably derive English from Chinese, skip
+                        pass
+
+        # Rest screen: use rest_options for mapping
+        elif screen_type == "REST" and "rest_options" in screen_state:
+            raw_choice_list = self.game_state().get("choice_list", [])
+            rest_options = screen_state["rest_options"]
+            for i, opt in enumerate(rest_options):
+                if i < len(raw_choice_list):
+                    # rest_options are always English even in Chinese game
+                    name_map[raw_choice_list[i]] = opt.lower()
+
+        # SHOP_ROOM: "shop" in choice_list
+        elif screen_type == "SHOP_ROOM":
+            raw_choice_list = self.game_state().get("choice_list", [])
+            for item in raw_choice_list:
+                name_map[item] = item.lower()
+
+        # CHEST, COMBAT_REWARD, BOSS_REWARD, MAP: lowercase the raw list
+        elif screen_type in ("CHEST", "COMBAT_REWARD", "BOSS_REWARD", "MAP"):
+            raw_choice_list = self.game_state().get("choice_list", [])
+            for item in raw_choice_list:
+                name_map[item] = item.lower()
+
+        return name_map
+
     def get_choice_list(self):
-        return self.game_state()["choice_list"]
+        raw = self.game_state()["choice_list"]
+        name_map = self._build_choice_name_map()
+        if name_map:
+            return [name_map.get(item, item.lower()) for item in raw]
+        return raw
 
     def get_choice_list_upgrade_stripped_from_choice(self):
         choice_list_modified = self.get_choice_list()

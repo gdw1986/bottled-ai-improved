@@ -47,11 +47,11 @@ class CommonMassDiscardHandler(Handler):
 
         choice_list = state.get_choice_list()
 
-        for checked_card in choice_list:
+        for idx, checked_card in enumerate(choice_list):
             if checked_card in cards_to_mass_discard:
                 if presentation_mode:
-                    return HandlerAction(commands=[p_delay, 'choose ' + checked_card])
-                return HandlerAction(commands=['choose ' + checked_card])
+                    return HandlerAction(commands=[p_delay, "choose " + str(idx)])
+                return HandlerAction(commands=["choose " + str(idx)])
 
         if presentation_mode:
             return HandlerAction(commands=[p_delay, 'confirm'])

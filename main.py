@@ -1,5 +1,9 @@
+import sys
 import time
 import traceback
+
+sys.stdin.reconfigure(encoding='utf-8')
+sys.stdout.reconfigure(encoding='utf-8')
 
 from rs.ai.claw_is_law.claw_is_law import CLAW_IS_LAW
 from rs.ai.peaceful_pummeling.peaceful_pummeling import PEACEFUL_PUMMELING
