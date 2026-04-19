@@ -1,97 +1,94 @@
-# Bottled AI
-Customizable bot for roguelike deck-building game [Slay the Spire](https://store.steampowered.com/app/646570/Slay_the_Spire/).
+# Bottled AI 中文版
 
-## FAQ
-### Does it win a lot? Is it super smart?
-Depends on which character and strategy is in use. We've got a few different ones! Our current best is a watcher strategy with 52% winrate. You can see our most current [winrates here](docs/winrates.md).
+基于 [Bottled AI](https://github.com/xaved88/bottled_ai) 修改，添加了**中文游戏语言**支持。
 
-### How does it work? Machine Learning? Gen AI?
-Nah, just good old-fashioned manually constructed automated decision-making. For example:
-- Selecting Cards, Boss Relics, and Upgrades works with a prioritized list, e.g. our strategy for Watcher might prefer taking Blasphemy over Tranquility.
-- Some decisions have specific conditions attached to them, like in the Shining Light event: take the damage for the 2 random upgrades... but not if we don't have much health left.
-- In combat, the bot figures out what the outcome would be for each of the different ways it could play its hand (with a graph traversal and a simulation we constructed). Then, the bot picks the outcome it likes best and plays the cards in that order.
-  - To decide what the best outcome is, the bot weighs about 40 different values against each other. Simple example: the bot prefers a turn where it defeats an enemy, but not if we will take a bunch of damage to make it happen.
+Slay the Spire（杀戮尖塔）自动打牌机器人，支持在中文游戏界面下正常运行。
 
-### Does the bot have access to secret information, e.g. the outcomes of random rolls, or what it will draw next?
-No, it can only see what the player does.
+## 与原版的区别
 
-### What are its current limitations/capabilities?
-See [capabilities.md](docs/capabilities.md).
+原版 Bottled AI 仅支持英文游戏语言。在中文环境下会出现以下问题：
 
-### Do you make videos about the bot?
-Actually, yes. Check out the [YouTube channel](https://www.youtube.com/@BottledAI)!
+| 问题 | 现象 | 修复方案 |
+|------|------|----------|
+| 编码错误 | stdin 读取中文 JSON 时 `UnicodeDecodeError` | 改用 `sys.stdin.buffer` 读写 UTF-8 |
+| 日志乱码 | 含中文的日志写入时 `UnicodeEncodeError` | 所有 `open()` 添加 `encoding='utf-8'` |
+| 卡牌匹配失败 | `choice_list` 返回中文名（如"打击"），bot 无法匹配英文名 | 自动利用 `card.id`（始终英文）翻译回英文 |
+| choose 命令失败 | CommunicationMod 不认识中文名（如 `choose 攻击`） | 统一改用数字索引（如 `choose 0`） |
 
-## Setup
+### 修改的文件
 
-### Python Setup
-1) Have Python installed (min version 3.11.8).
-    - Windows: you will likely need to add Python to the Path Environmental Variable.
-    - MacOS: you need Python 3.11+ within xcode. This requires xcode 14.0+ (this applied for python 3.9+, might need to be higher now), which in turn requires macOS Monterey (lower versions won't work!).
-2) Have [PIP](https://pip.pypa.io/en/stable/installation/) (python package manager) installed.
+- `main.py` — 添加 stdin/stdout UTF-8 编码
+- `rs/api/client.py` — 用 buffer 读写绕过 `input()` 的编码问题
+- `rs/helper/logger.py` — 日志写入 UTF-8
+- `rs/machine/state.py` — 核心翻译层：`_build_choice_name_map()` 自动翻译
+- `rs/common/handlers/common_upgrade_handler.py` — 升级选择改用索引
+- `rs/common/handlers/common_neow_handler.py` — Neow 事件改用索引
+- `rs/common/handlers/common_campfire_handler.py` — 篝火改用索引
+- `rs/common/handlers/common_mass_discard_handler.py` — 批量弃牌改用索引
+- `rs/common/handlers/common_shop_entrance_handler.py` — 商店入口改用索引
+- `rs/common/handlers/common_event_handler.py` — 5 个事件处理改用索引
 
-### Project Setup
-1) Clone this repository into the game's install folder, in a new folder: `\bottled_ai`.
-   - Windows example: ` E:\Steam\steamapps\common\SlayTheSpire\bottled_ai`
-   - MacOS example: Browse local files of StS via Steam -> Right click and Show Package Contents -> Resources -> bottled_ai
-2) Get/subscribe these mods via the Steam Workshop:
-    - [BaseMod](https://steamcommunity.com/sharedfiles/filedetails/?id=1605833019) 
-    - [StSLib](https://steamcommunity.com/sharedfiles/filedetails/?id=1609158507)
-    - [ModTheSpire](https://steamcommunity.com/sharedfiles/filedetails/?id=1605060445)
-    - [Communication Mod](https://steamcommunity.com/sharedfiles/filedetails/?id=2131373661)
-3) Run the game with the mods enabled - this will create your spire mod config files.
-4) Navigate to your CommunicationMod folder. How to find it:
+## 安装
+
+### 环境要求
+
+- Python 3.11.8+
+- [PIP](https://pip.pypa.io/en/stable/installation/)
+- Steam 版 Slay the Spire
+- **游戏语言设为中文**
+
+### Steam 创意工坊 Mod
+
+订阅以下 Mod：
+
+- [BaseMod](https://steamcommunity.com/sharedfiles/filedetails/?id=1605833019)
+- [StSLib](https://steamcommunity.com/sharedfiles/filedetails/?id=1609158507)
+- [ModTheSpire](https://steamcommunity.com/sharedfiles/filedetails/?id=1605060445)
+- [Communication Mod](https://steamcommunity.com/sharedfiles/filedetails/?id=2131373661)
+
+### 安装步骤
+
+1. 将本仓库克隆到游戏安装目录下的 `bottled_ai` 文件夹：
+   ```
+   E:\Steam\steamapps\common\SlayTheSpire\bottled_ai
+   ```
+2. 启动游戏并启用上述 Mod（会生成 Mod 配置文件）。
+3. 找到 CommunicationMod 配置目录：
    - Windows: `%LOCALAPPDATA%\ModTheSpire\`
-   - MacOS: `~/Library/Preferences/ModTheSpire/`
-5) Modify `config.properties` in the CommunicationMod folder:
-    - Windows: Add `command=python .\\bottled_ai\\main.py` to the `config.properties` file there.
-    - MacOS: Add `command=python3 ./bottled_ai/main.py` to the `config.properties` file there.
+   - macOS: `~/Library/Preferences/ModTheSpire/`
+4. 编辑 `CommunicationMod/config.properties`，添加：
+   ```
+   command=python .\\bottled_ai\\main.py
+   ```
 
-### Running the bot
-Start the bot via the game's main menu:
-- → Mods
-- → Communication Mod
-- → Config (next to "Return")
-- → Start external process
+### 启动机器人
 
-You can configure some run settings in [main.py](main.py).
+在游戏主菜单中：
 
-The process has a timeout of 10s so if you simply see that delay but nothing's happening - something isn't working.
-To debug, check the output in the ModTheSpire console, or the `communication_mod_errors.log` in the StS folder.
+1. **Mods** → **Communication Mod** → **Config** → **Start external process**
 
-## Making your own bot
-- See [how_to_make_your_own_bot.md](docs/how_to_make_your_own_bot.md).
+可在 `main.py` 中配置运行参数（角色策略、次数、种子等）。
 
+> 超时时间为 10 秒，如果启动后无反应，请查看 ModTheSpire 控制台或 `communication_mod_errors.log`。
 
-## Contact
-Just use the Discussions feature here on GitHub. We're happy to discuss or support!
+## 配置
 
+- **策略选择**：在 `main.py` 中修改 `strategy` 变量，可选策略：
+  - `PEACEFUL_PUMMELING`（静观其变，观者角色，推荐）
+  - `CLAW_IS_LAW`
+  - `PWNDER_MY_ORBS`
+  - `REQUESTED_STRIKE`
+  - `SHIVS_AND_GIGGLES`
+- **暂停机器人**：编辑 `run_controller.txt`
+- **调整操作速度**：编辑 `presentation_config.py`
 
-## Tools
+## 已知限制
 
-### Bot Controls
-- Adjust which bot strategy is used, the amount of runs, and the seed in [main.py](main.py).
-- Pause the bot in [run_controller.txt](run_controller.txt).
-- Adjust the speed of certain actions in [presentation_config.py](presentation_config.py).
+- 部分事件（EVENT）的中文选项标签无法自动翻译，会 fallback 到默认行为（选第一项）
+- 四角色（Defect/Silent/Ironclad）的中文支持未经完整测试
+- `has_relic()` 等基于 name 匹配的方法理论上不受影响（遗物 name 在 JSON 中保持英文）
 
-### Tests
-- All tests can be found in the `/tests` directory.
-- They're VERY useful for checking bot behavior without needing to run the game.
+## 致谢
 
-
-## Contributing
-We're happy to see you use this code for your own projects!
-
-We're also  happy to have you contribute to this repository! What we'd specifically love to see in _this_ project:
-- Any increased card / functionality coverage.
-- Performance improvements.
-- New handlers that add give strategies more options for effectiveness (like better potion handling for example).
-- Bugfixes!
-
-See [capabilities.md](docs/capabilities.md) for a _rough_ overview of current functionality coverage.
-
-Please note:
-- We will be hesitant to integrate any new strategies - unless they bring in a particular new approach that would be beneficial for others to use / learn from. 
-- We normally will not accept major changes to the systems or code structure. If you'd like to do this, please fork the repo and share it with us so that we can see what you've created!
-- Please cover any new functionality with tests. If you're not sure how to do that, just submit your changes without tests anyway, and we can support you with adding them.
-
-Just create a pull request with your changes, and we'll address them promptly. Thank you!
+- 原项目 [Bottled AI](https://github.com/xaved88/bottled_ai) by xaved88
+- [Communication Mod](https://steamcommunity.com/sharedfiles/filedetails/?id=2131373661) — 提供 bot 与游戏之间的通信接口
