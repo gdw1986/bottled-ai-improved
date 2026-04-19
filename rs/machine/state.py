@@ -275,9 +275,12 @@ class GameState:
         return options
 
     def get_event(self) -> Event:
-        event_name = self.game_state()['screen_state']['event_name']
+        # Prefer event_id (English, matches Event enum values) over event_name
+        # (Chinese display name, breaks match in non-English game versions).
+        screen = self.game_state()['screen_state']
+        event_id = screen.get('event_id', screen.get('event_name', ''))
         possible_events = set(item.value for item in Event)
 
-        if event_name not in possible_events:
-            return event_name
-        return Event(event_name)
+        if event_id not in possible_events:
+            return event_id  # log_missing_event in caller handles the case
+        return Event(event_id)
