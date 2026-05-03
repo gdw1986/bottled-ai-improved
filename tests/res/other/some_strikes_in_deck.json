@@ -151,7 +151,7 @@
         "type": "ATTACK",
         "ethereal": false,
         "uuid": "6133164a-c08a-49fc-b1aa-25a6d3d9584c",
-        "upgrades": 0,
+        "upgrades": 1,
         "rarity": "BASIC",
         "has_target": true
       },

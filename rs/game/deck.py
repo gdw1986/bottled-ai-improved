@@ -47,6 +47,8 @@ class Deck:
         # note that upgrades include "+" at the end of the name!
         amount = 0
         cmp = card_name.lower()
+        want_upgraded = cmp.endswith('+')
+        cmp_base = cmp.rstrip('+')
         for c in self.cards:
             # Use card id (always English) instead of name (may be localized)
             base_id = c.id.lower()
@@ -54,7 +56,8 @@ class Deck:
                 if base_id.endswith(suffix):
                     base_id = base_id[:-len(suffix)]
                     break
-            if base_id == cmp:
+            is_upgraded = c.upgrades > 0
+            if base_id == cmp_base and is_upgraded == want_upgraded:
                 amount += 1
         return amount
 
