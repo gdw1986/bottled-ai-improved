@@ -8,7 +8,9 @@
 
 ## 改进计划
 
-### ✅ 已完成（来自 bottled-ai-chinese）
+### ✅ 已完成
+
+#### 来自 bottled-ai-chinese
 
 | 问题 | 修复方案 |
 |------|----------|
@@ -16,6 +18,13 @@
 | 日志乱码 | 所有 `open()` 添加 `encoding='utf-8'` |
 | 卡牌匹配失败 | 用 `card.id`（始终英文）翻译中文名 |
 | `choose` 命令失败 | 统一改用数字索引 |
+
+#### 本项目新增修复
+
+| 问题 | 修复方案 |
+|------|----------|
+| 商店不操作（不买/不删卡） | 所有 5 策略的 `shop_purchase_handler.py` 改用数组索引定位，绕过中英文名匹配 |
+| `deck.contains_cards` 永远返回 False | 改用 `card.id` 匹配，自动 strip 角色后缀（`Strike_R` → `strike`） |
 
 ### 🚧 进行中 / 计划中
 

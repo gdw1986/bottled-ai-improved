@@ -23,7 +23,7 @@ class ShopPurchaseHandler(Handler):
             'Meat on the Bone',
             'Eternal Feather',
             'Regal Pillow',
-            'Lee’s Waffle',
+            "Lee's Waffle",
             'Meal Ticket',
             'Strawberry',
             'Toy Ornithopter',
@@ -50,52 +50,79 @@ class ShopPurchaseHandler(Handler):
         return state.screen_type() == ScreenType.SHOP_SCREEN.value
 
     def handle(self, state: GameState) -> HandlerAction:
-        choice = self.find_choice(state)
-        if choice:
-            idx = state.get_choice_list().index(choice)
+        action = self.find_choice(state)
+        if action:
             if presentation_mode:
-                return HandlerAction(commands=[p_delay, "choose " + str(idx), p_delay_s, "wait 30"])
-            return HandlerAction(commands=["choose " + str(idx), "wait 30"])
+                return HandlerAction(commands=[p_delay, action, p_delay_s, "wait 30"])
+            return HandlerAction(commands=[action, "wait 30"])
         if presentation_mode:
-            return HandlerAction(commands=["wait " + p_delay, "return", "proceed"])
+            return HandlerAction(commands=["wait 30", "return", "proceed"])
         return HandlerAction(commands=["return", "proceed"])
 
     def find_choice(self, state: GameState) -> str:
+        """Returns 'choose N' string, or '' to leave shop. Uses index-based matching to avoid
+        Chinese/English name translation issues."""
         gold = state.game_state()['gold']
         screen_state = state.game_state()['screen_state']
         can_purge = screen_state['purge_available'] and gold >= screen_state['purge_cost']
+        shop_cards = screen_state['cards']
+        shop_relics = screen_state['relics']
+        shop_potions = screen_state.get('potions', [])
+
+        # Index offsets in the choice_list (same order as CommunicationMod sends them)
+        def choose_purge():
+            return "choose 0"
+
+        def choose_card(i: int):
+            offset = 1 if can_purge else 0
+            return f"choose {offset + i}"
+
+        def choose_relic(i: int):
+            offset = (1 if can_purge else 0) + len(shop_cards)
+            return f"choose {offset + i}"
+
+        def choose_potion(i: int):
+            offset = (1 if can_purge else 0) + len(shop_cards) + len(shop_relics)
+            return f"choose {offset + i}"
 
         # 1. Purge curses
         if can_purge and state.deck.contains_curses_we_can_remove():
-            return "purge"
+            return choose_purge()
 
-        # 2. Perfected strike
-        for card in screen_state['cards']:
+        # 2. Perfected Strike
+        for i, card in enumerate(shop_cards):
             if card['id'] == 'Perfected Strike' and gold >= card['price']:
-                return card['name'].lower()
+                return choose_card(i)
 
         # 3. Membership Card
-        for relic in screen_state['relics']:
-            if relic['name'] == 'Membership Card' and gold >= relic['price']:
-                return "membership card"
+        for i, relic in enumerate(shop_relics):
+            if relic['id'] == 'Membership Card' and gold >= relic['price']:
+                return choose_relic(i)
 
-        # 4. Purge in general
+        # 4. Purge in general (avoid duplicates by checking deck has cards to remove)
         if can_purge and state.deck.contains_cards(CARD_REMOVAL_PRIORITY_LIST):
-            return "purge"
+            return choose_purge()
 
-        # 5. Relics based on list
-        for p in self.relics:
-            for relic in screen_state['relics']:
-                if relic['name'] == p and gold >= relic['price']:
-                    return relic['name'].lower()
+        # 5. Relics based on priority list (match by id - always English)
+        for wanted in self.relics:
+            for i, relic in enumerate(shop_relics):
+                if relic['id'] == wanted and gold >= relic['price']:
+                    return choose_relic(i)
 
-        # 6. Cards based on list
-        deck_card_list = state.get_deck_card_list_by_id()
-        for p in self.cards:
-            for card in screen_state['cards']:
-                if card['id'] == p and gold >= card['price']:
-                    if p.lower not in deck_card_list:
-                        return card['name'].lower()
+        # 6. Cards based on list (match by id - always English)
+        deck_card_ids = state.get_deck_card_list_by_id()
+        for wanted in self.cards:
+            wanted_lower = wanted.lower()
+            for i, card in enumerate(shop_cards):
+                if card['id'].lower() == wanted_lower and gold >= card['price']:
+                    if wanted_lower not in deck_card_ids:
+                        return choose_card(i)
 
-        # Nothing we want / can afford, leave.
+        # 7. Potions we want
+        for i, potion in enumerate(shop_potions):
+            if potion.get('price', 999) <= gold:
+                # buy any affordable potion if we have a slot
+                if not state.are_potions_full():
+                    return choose_potion(i)
+
         return ''

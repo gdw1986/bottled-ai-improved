@@ -1,5 +1,3 @@
-"""商店购买处理器 - 使用索引而非名称进行选择"""
-
 from presentation_config import presentation_mode, p_delay, p_delay_s
 from rs.ai.claw_is_law.config import CARD_REMOVAL_PRIORITY_LIST
 from rs.game.screen_type import ScreenType
@@ -36,75 +34,70 @@ class ShopPurchaseHandler(Handler):
         return state.screen_type() == ScreenType.SHOP_SCREEN.value
 
     def handle(self, state: GameState) -> HandlerAction:
-        idx = self.find_choice_index(state)
-        if idx >= 0:
+        action = self._find_action(state)
+        if action:
             if presentation_mode:
-                return HandlerAction(commands=[p_delay, "choose " + str(idx), p_delay_s, "wait 30"])
-            return HandlerAction(commands=["choose " + str(idx), "wait 30"])
+                return HandlerAction(commands=[p_delay, action, p_delay_s, "wait 30"])
+            return HandlerAction(commands=[action, "wait 30"])
         if presentation_mode:
-            return HandlerAction(commands=["wait " + p_delay, "return", "proceed"])
+            return HandlerAction(commands=["wait 30", "return", "proceed"])
         return HandlerAction(commands=["return", "proceed"])
 
-    def find_choice_index(self, state: GameState) -> int:
-        """返回要选择的索引，-1 表示不购买"""
+    def _find_action(self, state: GameState) -> str:
         gold = state.game_state()['gold']
-        screen_state = state.game_state()['screen_state']
-        choice_list = state.get_choice_list()
-        
-        # 验证数据完整性
-        if not choice_list or 'cards' not in screen_state:
-            return -1
+        sc = state.game_state()['screen_state']
+        can_purge = sc.get('purge_available', False) and gold >= sc.get('purge_cost', 999)
+        shop_cards = sc.get('cards', [])
+        shop_relics = sc.get('relics', [])
+        shop_potions = sc.get('potions', [])
 
-        can_purge = screen_state.get('purge_available', False) and gold >= screen_state.get('purge_cost', 999)
+        def choose_purge():
+            return "choose 0"
 
-        # 遍历 choice_list 找匹配项
-        for idx, choice in enumerate(choice_list):
-            choice_lower = choice.lower()
-            
-            # 0. 检查遗物（通过 screen_state.relics 匹配）
-            relics = screen_state.get('relics', [])
-            for relic in relics:
-                relic_id = relic.get('id', '')
-                relic_name = relic.get('name', '').lower()
-                relic_price = relic.get('price', 999)
-                
-                if gold >= relic_price:
-                    # Kunai/Shuriken
-                    if relic_id == 'Kunai' and relic_name == choice_lower:
-                        return idx
-                    if relic_id == 'Shuriken' and relic_name == choice_lower:
-                        return idx
-                    # 其他遗物
-                    if relic_id in self.relics_to_buy and relic_name == choice_lower:
-                        return idx
+        def choose_card(i: int):
+            return f"choose {(1 if can_purge else 0) + i}"
 
-            # 1. 检查卡牌（通过 screen_state.cards 匹配）
-            cards = screen_state.get('cards', [])
-            for card in cards:
-                card_id = card.get('id', '')
-                card_name = card.get('name', '').lower()
-                card_price = card.get('price', 999)
-                
-                if gold >= card_price and card_name == choice_lower:
-                    # 检查是否在购买列表中
-                    if card_id in self.cards_to_buy:
-                        # 检查牌组是否已有
-                        deck_card_list = state.get_deck_card_list_by_id()
-                        if card_id.lower() not in deck_card_list:
-                            return idx
+        def choose_relic(i: int):
+            return f"choose {(1 if can_purge else 0) + len(shop_cards) + i}"
 
-        # 2. 检查删除诅咒
+        def choose_potion(i: int):
+            return f"choose {(1 if can_purge else 0) + len(shop_cards) + len(shop_relics) + i}"
+
+        # 1. Purge curses
         if can_purge and state.deck.contains_curses_we_can_remove():
-            try:
-                return choice_list.index('purge')
-            except ValueError:
-                pass
+            return choose_purge()
 
-        # 3. 检查删除基础牌
+        # 2. Purge basics
         if can_purge and state.deck.contains_cards(CARD_REMOVAL_PRIORITY_LIST):
-            try:
-                return choice_list.index('purge')
-            except ValueError:
-                pass
+            return choose_purge()
 
-        return -1
+        # 3. Key relics (Kunai/Shuriken prioritized)
+        for i, relic in enumerate(shop_relics):
+            rid = relic.get('id', '')
+            price = relic.get('price', 999)
+            if gold >= price:
+                if rid in ('Kunai', 'Shuriken', 'Ornamental Fan'):
+                    return choose_relic(i)
+
+        # 4. Cards we want
+        deck_ids = state.get_deck_card_list_by_id()
+        for wanted in self.cards_to_buy:
+            for i, card in enumerate(shop_cards):
+                if card.get('id', '') == wanted and gold >= card.get('price', 999):
+                    if wanted.lower() not in deck_ids:
+                        return choose_card(i)
+
+        # 5. Other relics
+        for i, relic in enumerate(shop_relics):
+            rid = relic.get('id', '')
+            price = relic.get('price', 999)
+            if gold >= price and rid in self.relics_to_buy:
+                return choose_relic(i)
+
+        # 6. Buy any potion if we have a free slot
+        if not state.are_potions_full():
+            for i, potion in enumerate(shop_potions):
+                if gold >= potion.get('price', 999):
+                    return choose_potion(i)
+
+        return ''

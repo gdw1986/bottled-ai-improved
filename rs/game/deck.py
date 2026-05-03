@@ -32,15 +32,29 @@ class Deck:
     def contains_cards(self, names: List[str]) -> bool:
         names = [element.lower() for element in names]
         for card in self.cards:
-            if card.name.lower() in names:
+            # Use card id (always English) instead of name (may be localized)
+            base_id = card.id.lower()
+            # Strip character suffix for base cards: Strike_R/Strike_G -> strike
+            for suffix in ('_r', '_g', '_b', '_p'):
+                if base_id.endswith(suffix):
+                    base_id = base_id[:-len(suffix)]
+                    break
+            if base_id in names:
                 return True
         return False
 
     def contains_card_amount(self, card_name) -> int:
         # note that upgrades include "+" at the end of the name!
         amount = 0
+        cmp = card_name.lower()
         for c in self.cards:
-            if c.name.lower() == card_name:
+            # Use card id (always English) instead of name (may be localized)
+            base_id = c.id.lower()
+            for suffix in ('_r', '_g', '_b', '_p'):
+                if base_id.endswith(suffix):
+                    base_id = base_id[:-len(suffix)]
+                    break
+            if base_id == cmp:
                 amount += 1
         return amount
 
