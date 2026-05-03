@@ -35,12 +35,19 @@ class CommonPurgeHandler(Handler):
         choice_list = state.get_choice_list()
         choices = []
 
-        # First Curses
+        # First Curses (use card.id - always English, strip color suffix)
+        suffixes = ('_r', '_g', '_b', '_p')
         for card in state.deck.cards:
-            if card.type == CardType.CURSE and card.name.lower() in choice_list:
-                choices.append(choice_list.index(card.name.lower()))
+            if card.type == CardType.CURSE:
+                base_id = card.id.lower()
+                for s in suffixes:
+                    if base_id.endswith(s):
+                        base_id = base_id[: -len(s)]
+                        break
+                if base_id in choice_list:
+                    choices.append(choice_list.index(base_id))
 
-        # Then the rest
+        # Then the rest (choice_list is already translated to English by name_map)
         for pref in self.preferences:
             for i in range(len(choice_list)):
                 if pref == choice_list[i]:

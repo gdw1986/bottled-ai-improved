@@ -119,10 +119,25 @@ class GameState:
                 name_map[item] = item.lower()
 
         # CHEST, COMBAT_REWARD, BOSS_REWARD, MAP: lowercase the raw list
-        elif screen_type in ("CHEST", "COMBAT_REWARD", "BOSS_REWARD", "MAP"):
+        elif screen_type in ("CHEST", "COMBAT_REWARD", "MAP"):
             raw_choice_list = self.game_state().get("choice_list", [])
             for item in raw_choice_list:
                 name_map[item] = item.lower()
+
+        # BOSS_REWARD: translate Chinese relic names to English IDs
+        elif screen_type == "BOSS_REWARD":
+            raw_choice_list = self.game_state().get("choice_list", [])
+            relics = screen_state.get("relics", [])
+            # Build lookup: relic name/id (any language) → id (lowercase)
+            relic_lookup = {}
+            for relic in relics:
+                rid = relic.get("id", "").lower()
+                if rid:
+                    relic_lookup[relic.get("name", "")] = rid
+                    relic_lookup[rid] = rid  # also match by id itself
+            for item in raw_choice_list:
+                key = item.strip()
+                name_map[item] = relic_lookup.get(key, item.lower())
 
         return name_map
 

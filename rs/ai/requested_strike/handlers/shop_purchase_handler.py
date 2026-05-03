@@ -52,6 +52,15 @@ class ShopPurchaseHandler(Handler):
     def handle(self, state: GameState) -> HandlerAction:
         action = self.find_choice(state)
         if action:
+            # Safety: validate index is within bounds
+            try:
+                idx = int(action.split()[1])
+                max_idx = len(state.get_choice_list()) - 1
+                if idx > max_idx:
+                    print(f"[SHOP] ERROR: choose {idx} exceeds max {max_idx}, choices: {state.get_choice_list()}")
+                    return HandlerAction(commands=["return", "proceed"])
+            except (ValueError, IndexError):
+                pass
             if presentation_mode:
                 return HandlerAction(commands=[p_delay, action, p_delay_s, "wait 30"])
             return HandlerAction(commands=[action, "wait 30"])
@@ -64,9 +73,10 @@ class ShopPurchaseHandler(Handler):
         Chinese/English name translation issues."""
         gold = state.game_state()['gold']
         screen_state = state.game_state()['screen_state']
-        can_purge = screen_state['purge_available'] and gold >= screen_state['purge_cost']
-        shop_cards = screen_state['cards']
-        shop_relics = screen_state['relics']
+
+        can_purge = screen_state.get('purge_available', False) and gold >= screen_state.get('purge_cost', 999)
+        shop_cards = screen_state.get('cards', [])
+        shop_relics = screen_state.get('relics', [])
         shop_potions = screen_state.get('potions', [])
 
         # Index offsets in the choice_list (same order as CommunicationMod sends them)
