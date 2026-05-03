@@ -58,9 +58,9 @@
 
 ### 安装步骤
 
-1. 将本仓库克隆到游戏安装目录下的 `bottled_ai` 文件夹：
+1. 将本仓库克隆到游戏安装目录：
    ```
-   C:\Program Files (x86)\Steam\steamapps\common\SlayTheSpire\bottled_ai
+   C:\Program Files (x86)\Steam\steamapps\common\SlayTheSpire\bottled-ai-improved
    ```
 2. 启动游戏并启用上述 Mod。
 3. 找到 CommunicationMod 配置目录：
@@ -68,7 +68,7 @@
    - macOS: `~/Library/Preferences/ModTheSpire/`
 4. 编辑 `CommunicationMod/config.properties`，添加：
    ```
-   command=python .\bottled_ai\main.py
+   command=python .\bottled-ai-improved\main.py
    ```
 
 ### 启动机器人
