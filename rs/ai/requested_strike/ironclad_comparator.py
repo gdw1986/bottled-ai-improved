@@ -129,17 +129,40 @@ def prefers_killing_dangerous_enemy_first(best: CA, challenger: CA) -> Optional[
 
 
 def prefers_armaments_played(best: CA, challenger: CA) -> Optional[bool]:
-    """Prefer states where Armaments has been played (upgrades hand cards).
+    """Prefer state where Armaments+ upgraded hand cards.
 
-    Armaments+ upgrades every card in hand, which is invisible to damage/block metrics.
-    This comparison acts as a tie-breaker: when combat outcomes are otherwise equal,
-    prefer the state with more upgraded cards in hand.
+    Armaments+ upgrades every card in hand for the rest of combat — massive value
+    invisible to damage/block metrics. This is NOT a tie-breaker; it fires BEFORE
+    damage comparisons so upgrades outweigh small immediate damage advantages.
+
+    Won't overrule kills (battle_is_won comes first) or lethal prevention
+    (battle_not_lost comes first). Won't fire when hand is empty or cards
+    lack upgrade tracking.
     """
-    best_upgraded = sum(1 for c in best.state.hand if hasattr(c, 'upgrades') and c.upgrades > 0)
-    chal_upgraded = sum(1 for c in challenger.state.hand if hasattr(c, 'upgrades') and c.upgrades > 0)
-    if best_upgraded != chal_upgraded:
-        return chal_upgraded > best_upgraded
-    return None
+    def _upgraded(state):
+        try:
+            if not state.hand:
+                return 0
+            return sum(1 for c in state.hand if c.upgrades > 0)
+        except AttributeError:
+            return 0
+
+    best_ups = _upgraded(best.state)
+    chal_ups = _upgraded(challenger.state)
+
+    if best_ups == chal_ups:
+        return None
+
+    diff = chal_ups - best_ups  # positive = challenger upgraded more cards
+    if diff <= 1:
+        return None  # upgrading 1 card isn't worth prioritizing
+
+    # Don't overrule a state that kills more monsters
+    if best.dead_monsters() > challenger.dead_monsters():
+        return None
+
+    # Armaments+ state has 2+ extra upgraded cards → prefer it
+    return chal_ups > best_ups
 
 
 # ---------------------------------------------------------------------------
@@ -158,20 +181,22 @@ ironclad_comparisons: List[Comparison] = [
     penalizes_low_hp_setup_ironclad,       # Low HP → minimize damage
     prefers_setup_when_safe,               # Safe → play powers
 
-    # 3. Enemy management
-    prefers_killing_dangerous_enemy_first,  # Kill priority targets
+    # 3. Enemy management — dangerous targets first
+    prefers_killing_dangerous_enemy_first,  # Kill Red Slaver / Gremlin minions
+
+    # 3.5. Hand quality — Armaments+ upgrade value evaluated before generic damage
+    prefers_armaments_played,
+
+    # 4. Generic damage / kill metrics
     most_dead_monsters,
     lowest_health_monster,
     lowest_total_monster_health,
 
-    # 4. Status effects on enemies
+    # 5. Status effects on enemies
     most_enemy_vulnerable,
     most_enemy_weak,
 
-    # 4.5. Hand quality (Armaments upgrade value, otherwise invisible)
-    prefers_armaments_played,
-
-    # 5. Damage / protection
+    # 6. Damage / protection
     most_block_saved_for_next_turn,
     least_incoming_damage_over_1,
     least_incoming_damage,
