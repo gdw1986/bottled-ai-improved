@@ -128,6 +128,20 @@ def prefers_killing_dangerous_enemy_first(best: CA, challenger: CA) -> Optional[
     return None
 
 
+def prefers_strength_tiebreaker(best: CA, challenger: CA) -> Optional[bool]:
+    """When outcomes are otherwise identical, prefer higher strength.
+    
+    Ironclad's strength scaling means having +3 strength vs +0 turns
+    every attack into a significantly better play next turn. This acts
+    as a soft nudge in the comparison chain.
+    """
+    best_str = best.state.player.powers.get(PowerId.STRENGTH, 0)
+    chal_str = challenger.state.player.powers.get(PowerId.STRENGTH, 0)
+    if best_str != chal_str:
+        return chal_str > best_str
+    return None
+
+
 def prefers_armaments_played(best: CA, challenger: CA) -> Optional[bool]:
     """When Armaments+ is in hand, prefer the path that plays it.
 
@@ -177,6 +191,9 @@ ironclad_comparisons: List[Comparison] = [
 
     # 3. Enemy management — dangerous targets first
     prefers_killing_dangerous_enemy_first,  # Kill Red Slaver / Gremlin minions
+
+    # 3.3 Ironclad-specific: when outcomes are tied, prefer strength buildup
+    prefers_strength_tiebreaker,
 
     # 3.5. Hand quality — Armaments+ upgrade value evaluated before generic damage
     prefers_armaments_played,

@@ -11,20 +11,24 @@ conditions match or total samples < threshold, returns None → caller
 falls back to static list.
 
 Data file expected at: rs/ai/requested_strike/data/conditional_winrates.json
+Synergy data at: rs/ai/requested_strike/data/synergies.json
 """
 import json, os, math
 from typing import Optional
 
 # Loaded once at import time
 _DATA = None
+_SYNERGIES = None
 
 def _load():
-    global _DATA
+    global _DATA, _SYNERGIES
     if _DATA is not None:
         return
-    path = os.path.join(os.path.dirname(__file__), '..', 'data', 'conditional_winrates.json')
-    with open(path, encoding='utf-8') as f:
+    data_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
+    with open(os.path.join(data_dir, 'conditional_winrates.json'), encoding='utf-8') as f:
         _DATA = json.load(f)
+    with open(os.path.join(data_dir, 'synergies.json'), encoding='utf-8') as f:
+        _SYNERGIES = json.load(f)
 
 
 # Feature extraction (mirrors Phase 1 categories)
@@ -79,7 +83,7 @@ def pick_best_card(candidates: list[str], deck_card_names: list[str],
         Best card name (base form) or None if data insufficient for all
     """
     _load()
-    assert _DATA is not None
+    assert _DATA is not None and _SYNERGIES is not None
     feats = deck_features(deck_card_names)
 
     # Determine size bucket
@@ -148,6 +152,26 @@ def pick_best_card(candidates: list[str], deck_card_names: list[str],
             continue
 
         score = base_wr + (weighted_delta / total_weight)
+
+        # --- Synergy bonus ---
+        # For each card already in deck, check synergy pairs "deck_card→candidate"
+        # Synergy delta weighted by log(n), capped at +0.15 to prevent runaway.
+        synergy_bonus = 0.0
+        for deck_card in deck_card_names:
+            for suffix in ('', '+1'):
+                key = f'{deck_card}{suffix}→{candidate}'
+                if key in _SYNERGIES:
+                    s = _SYNERGIES[key]
+                    if s['n'] >= 10:
+                        synergy_bonus += s['delta'] * math.log(s['n']) / math.log(100)
+                # Also try the reverse: candidate→deck_card
+                key_rev = f'{candidate}→{deck_card}{suffix}'
+                if key_rev in _SYNERGIES:
+                    s = _SYNERGIES[key_rev]
+                    if s['n'] >= 10:
+                        synergy_bonus += s['delta'] * math.log(s['n']) / math.log(100)
+        synergy_bonus = min(synergy_bonus, 0.15)
+        score += synergy_bonus
 
         if score > best_score:
             best_score = score

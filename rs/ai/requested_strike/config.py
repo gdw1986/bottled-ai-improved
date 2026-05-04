@@ -70,7 +70,7 @@ DESIRED_CARDS_FOR_DECK: dict[str, int] = {
     'power through': 2,      # 14% → 33%
     'feel no pain': 1,       # 14% → 33%
     'apotheosis': 1,         # 25% → 32%
-    'shrug it off': 2,       # 15% → 32%
+    'shrug it off': 3,       # 15% → 32% (universal A15+ winner: 64% deck presence)
     'burning pact': 2,       # 13% → 31%
     'brutality': 1,          # 16% → 31%
     'double tap': 1,         # 15% → 31%
@@ -104,9 +104,9 @@ DESIRED_CARDS_FOR_DECK: dict[str, int] = {
     'uppercut': 1,           # 12% → 25%
     'pummel': 2,             # 14% → 25% (scales w/str, 2 max)
 
-    # Perfected Strike archetype (strategy-defining core, 11%→26%)
+    # Perfected Strike — situational, not primary (max 2, let synergies emerge naturally)
     'twin strike': 2,        # 14% → 25%
-    'perfected strike': 5,   # 10% → 26% (needs copies for scaling)
+    'perfected strike': 2,   # 10% → 26% (adaptive: dynamic picker steers based on deck state)
     'clash': 2,              # 13% → 26%
 
     # Colorless / Shop (high base wr, pick opportunistically)
@@ -136,8 +136,8 @@ DESIRED_CARDS_FOR_DECK: dict[str, int] = {
 
 HIGH_PRIORITY_UPGRADES = [
     'Apotheosis',
+    'Limit Break',     # #1 upgrade: exhaust → non-exhaust, enables infinite strength scaling
     'Armaments',      # upgrades every card in hand when Armaments+ — massive value
-    'Perfected Strike',
 ]
 
 DESIRED_POTIONS = [
