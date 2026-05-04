@@ -79,6 +79,7 @@ def pick_best_card(candidates: list[str], deck_card_names: list[str],
         Best card name (base form) or None if data insufficient for all
     """
     _load()
+    assert _DATA is not None
     feats = deck_features(deck_card_names)
 
     # Determine size bucket
