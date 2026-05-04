@@ -18,6 +18,7 @@ class CardId(Enum):
     AMPLIFY = 'amplify'
     ANGER = 'anger'
     APOTHEOSIS = 'apotheosis'
+    ARMAMENTS = 'armaments'
     APPARITION = 'ghostly'
     ASCENDERS_BANE = 'ascender\u0027sbane'
     AUTO_SHIELDS = 'auto shields'

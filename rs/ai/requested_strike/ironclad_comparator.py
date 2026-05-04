@@ -129,18 +129,18 @@ def prefers_killing_dangerous_enemy_first(best: CA, challenger: CA) -> Optional[
 
 
 def prefers_armaments_played(best: CA, challenger: CA) -> Optional[bool]:
-    """When Armaments+ is in hand, always prefer the path that plays it.
+    """When Armaments+ is in hand, prefer the path that plays it.
 
-    The simulator does NOT implement Armaments+'s upgrade-all-cards-in-hand
-    effect. So we can't check c.upgrade on simulated states (always 0).
-    Instead, detect presence of Armaments+ in the ORIGINAL (real game) hand
-    and check whether it was consumed (removed from hand) in the simulated path.
+    Detects which path consumed the Armaments+ card from the original hand.
+    Does NOT rely on c.upgrade in simulated states (the simulator doesn't
+    implement Armaments's upgrade-all-cards-in-hand effect).
 
-    Position: after battle_won/lost but before damage comparisons.
+    Positioned after battle_won/lost + threat assessment, before generic
+    damage comparisons.
     """
     from rs.calculator.enums.card_id import CardId
 
-    # Check if Armaments+ was in the original (real-game) hand
+    # Only fires when Armaments+ is in original (real-game) hand
     has_armaments_plus = any(
         c.id == CardId.ARMAMENTS and c.upgrade >= 1
         for c in challenger.original.hand
@@ -156,7 +156,7 @@ def prefers_armaments_played(best: CA, challenger: CA) -> Optional[bool]:
         return True   # challenger played Armaments+ → prefer it
     if chal_kept and not best_kept:
         return False  # best already played Armaments+ → keep it
-    return None  # both or neither → let other comparisons decide
+    return None  # neither or both consumed → other comparisons decide
 
 
 # ---------------------------------------------------------------------------
