@@ -18,7 +18,7 @@ from rs.helper.logger import log, init_log, log_new_run_sequence
 # If there are run seeds, it will run them. Otherwise, it will use the run amount.
 run_seeds = [
     #'LGZ12EEMFGUK',
-    # 'L5BG57LF16GY'
+    'SC4D2Q4ZQVPB'
 ]
 run_amount = 1
 strategy = REQUESTED_STRIKE

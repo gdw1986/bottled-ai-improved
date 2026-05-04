@@ -20,15 +20,13 @@ CARD_REMOVAL_PRIORITY_LIST = [
     'necronomicurse',
     'ascendersbane',
 
-    # Starters — replace with better cards
+    # Starters — replace with better cards (Bash is KEEPER!)
     'strike_r',
     'defend_r',
-    'bash',
     'strike',
     'defend',
     'strike_r+1',
     'defend_r+1',
-    'bash+1',
     'strike+1',
     'defend+1',
 
