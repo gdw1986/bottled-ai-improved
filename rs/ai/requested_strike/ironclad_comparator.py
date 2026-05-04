@@ -128,6 +128,20 @@ def prefers_killing_dangerous_enemy_first(best: CA, challenger: CA) -> Optional[
     return None
 
 
+def prefers_armaments_played(best: CA, challenger: CA) -> Optional[bool]:
+    """Prefer states where Armaments has been played (upgrades hand cards).
+
+    Armaments+ upgrades every card in hand, which is invisible to damage/block metrics.
+    This comparison acts as a tie-breaker: when combat outcomes are otherwise equal,
+    prefer the state with more upgraded cards in hand.
+    """
+    best_upgraded = sum(1 for c in best.state.hand if hasattr(c, 'upgrades') and c.upgrades > 0)
+    chal_upgraded = sum(1 for c in challenger.state.hand if hasattr(c, 'upgrades') and c.upgrades > 0)
+    if best_upgraded != chal_upgraded:
+        return chal_upgraded > best_upgraded
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Ironclad comparison chain
 # ---------------------------------------------------------------------------
@@ -153,6 +167,9 @@ ironclad_comparisons: List[Comparison] = [
     # 4. Status effects on enemies
     most_enemy_vulnerable,
     most_enemy_weak,
+
+    # 4.5. Hand quality (Armaments upgrade value, otherwise invisible)
+    prefers_armaments_played,
 
     # 5. Damage / protection
     most_block_saved_for_next_turn,
