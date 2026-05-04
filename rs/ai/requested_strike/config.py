@@ -64,6 +64,7 @@ DESIRED_CARDS_FOR_DECK: dict[str, int] = {
     'limit break': 1,        # 15% → 36%
 
     # A-tier: 31-34% upgraded winrate
+    'armaments': 2,          # 20% → 32% (upgrades whole hand, top 5 picked)
     'exhume': 1,             # 18% → 34%
     'sentinel': 1,           # 15% → 34%
     'warcry': 2,             # 13% → 34%
@@ -129,10 +130,15 @@ DESIRED_CARDS_FOR_DECK: dict[str, int] = {
     'thunderclap': 1,        # 13% → 24%
     'anger': 1,              # 11% → 20%
     'headbutt': 2,           # 14% → 25%
+
+    # AoE & burst (high appearance in A15+ wins, formerly missing)
+    'whirlwind': 2,          # 12% → 30%
+    'flex': 2,               # 13% → 28%
 }
 
 HIGH_PRIORITY_UPGRADES = [
     'Apotheosis',
+    'Armaments',      # upgrades every card in hand when Armaments+ — massive value
     'Perfected Strike',
 ]
 

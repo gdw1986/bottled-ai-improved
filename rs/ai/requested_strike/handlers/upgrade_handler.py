@@ -9,6 +9,7 @@ class UpgradeHandler(CommonUpgradeHandler):
     def __init__(self):
         super().__init__(priorities=[
             'apotheosis',
+            'armaments',          # #2 priority: upgrades entire hand
             'perfected strike',
             'bash',
             'shockwave',
