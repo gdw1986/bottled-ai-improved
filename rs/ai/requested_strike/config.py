@@ -5,10 +5,52 @@ Cards sorted by upgraded winrate. Copy counts set by practical limits.
 """
 
 CARD_REMOVAL_PRIORITY_LIST = [
-    'defend',
+    # Curses — remove unconditionally
+    'regret',
+    'doubt',
+    'injury',
+    'pain',
+    'decay',
+    'shame',
+    'writhe',
+    'normality',
+    'parasite',
+    'clumsy',
+    'curseofthebell',
+    'necronomicurse',
+    'ascendersbane',
+
+    # Starters — replace with better cards
+    'strike_r',
+    'defend_r',
+    'bash',
     'strike',
-    'defend+',
-    'strike+',
+    'defend',
+    'strike_r+1',
+    'defend_r+1',
+    'bash+1',
+    'strike+1',
+    'defend+1',
+
+    # Bad ceiling (<19% wr even when upgraded)
+    'rampage',
+    'rampage+1',
+    'handofgreed',
+    'handofgreed+1',
+    'wild strike',
+    'wild strike+1',
+    'hemokinesis',
+    'hemokinesis+1',
+    'combust',
+    'combust+1',
+    'carnage',
+    'carnage+1',
+    'anger',
+    'anger+1',
+    'fire breathing',
+    'fire breathing+1',
+    'searing blow',
+    'searing blow+1',
 ]
 
 # == Data-Driven DESIRED_CARDS_FOR_DECK ==
