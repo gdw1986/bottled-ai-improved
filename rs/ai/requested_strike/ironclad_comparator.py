@@ -140,12 +140,9 @@ def prefers_armaments_played(best: CA, challenger: CA) -> Optional[bool]:
     lack upgrade tracking.
     """
     def _upgraded(state):
-        try:
-            if not state.hand:
-                return 0
-            return sum(1 for c in state.hand if c.upgrades > 0)
-        except AttributeError:
+        if not state.hand:
             return 0
+        return sum(1 for c in state.hand if c.upgrade > 0)
 
     best_ups = _upgraded(best.state)
     chal_ups = _upgraded(challenger.state)
