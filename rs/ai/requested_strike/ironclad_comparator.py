@@ -129,37 +129,34 @@ def prefers_killing_dangerous_enemy_first(best: CA, challenger: CA) -> Optional[
 
 
 def prefers_armaments_played(best: CA, challenger: CA) -> Optional[bool]:
-    """Prefer state where Armaments+ upgraded hand cards.
+    """When Armaments+ is in hand, always prefer the path that plays it.
 
-    Armaments+ upgrades every card in hand for the rest of combat — massive value
-    invisible to damage/block metrics. This is NOT a tie-breaker; it fires BEFORE
-    damage comparisons so upgrades outweigh small immediate damage advantages.
+    The simulator does NOT implement Armaments+'s upgrade-all-cards-in-hand
+    effect. So we can't check c.upgrade on simulated states (always 0).
+    Instead, detect presence of Armaments+ in the ORIGINAL (real game) hand
+    and check whether it was consumed (removed from hand) in the simulated path.
 
-    Won't overrule kills (battle_is_won comes first) or lethal prevention
-    (battle_not_lost comes first). Won't fire when hand is empty or cards
-    lack upgrade tracking.
+    Position: after battle_won/lost but before damage comparisons.
     """
-    def _upgraded(state):
-        if not state.hand:
-            return 0
-        return sum(1 for c in state.hand if c.upgrade > 0)
+    from rs.calculator.enums.card_id import CardId
 
-    best_ups = _upgraded(best.state)
-    chal_ups = _upgraded(challenger.state)
-
-    if best_ups == chal_ups:
+    # Check if Armaments+ was in the original (real-game) hand
+    has_armaments_plus = any(
+        c.id == CardId.ARMAMENTS and c.upgrade >= 1
+        for c in challenger.original.hand
+    )
+    if not has_armaments_plus:
         return None
 
-    diff = chal_ups - best_ups  # positive = challenger upgraded more cards
-    if diff <= 1:
-        return None  # upgrading 1 card isn't worth prioritizing
+    # Detect which path consumed Armaments+
+    best_kept = any(c.id == CardId.ARMAMENTS for c in best.state.hand)
+    chal_kept = any(c.id == CardId.ARMAMENTS for c in challenger.state.hand)
 
-    # Don't overrule a state that kills more monsters
-    if best.dead_monsters() > challenger.dead_monsters():
-        return None
-
-    # Armaments+ state has 2+ extra upgraded cards → prefer it
-    return chal_ups > best_ups
+    if best_kept and not chal_kept:
+        return True   # challenger played Armaments+ → prefer it
+    if chal_kept and not best_kept:
+        return False  # best already played Armaments+ → keep it
+    return None  # both or neither → let other comparisons decide
 
 
 # ---------------------------------------------------------------------------
