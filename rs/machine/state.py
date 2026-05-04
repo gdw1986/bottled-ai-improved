@@ -7,6 +7,7 @@ from rs.game.event import Event
 from rs.machine.command import Command
 from rs.machine.orb import Orb
 from rs.machine.the_bots_memory_book import TheBotsMemoryBook
+import sys
 
 
 class GameState:
@@ -92,16 +93,17 @@ class GameState:
                         en_name += "+"
                     name_map[cn_name] = en_name
 
-        # Event screens: map Chinese labels to lowercase English labels
+        # Event screens: map Chinese labels to English via option position
         elif screen_type == "EVENT" and "options" in screen_state:
-            for option in screen_state["options"]:
-                cn_label = option.get("label", "").strip().lower()
-                # The English label would be used in choice_list; try to map via choice_index
-                if cn_label:
-                    idx = option.get("choice_index")
-                    if idx is not None and idx < len(self.game_state().get("choice_list", [])):
-                        # We can't reliably derive English from Chinese, skip
-                        pass
+            raw_choice_list = self.game_state().get("choice_list", [])
+            options = screen_state.get("options", [])
+            for pos, opt in enumerate(options):
+                cn_label = opt.get("label", "").strip().lower()
+                if cn_label and pos < len(raw_choice_list):
+                    # Use option position + choice_index to map the raw entry
+                    idx = opt.get("choice_index")
+                    if idx is not None and idx < len(raw_choice_list):
+                        name_map[raw_choice_list[idx]] = cn_label
 
         # Rest screen: use rest_options for mapping
         elif screen_type == "REST" and "rest_options" in screen_state:

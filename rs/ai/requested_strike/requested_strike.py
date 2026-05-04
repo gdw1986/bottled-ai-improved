@@ -10,7 +10,7 @@ from rs.ai.requested_strike.handlers.potions_handler import PotionsBossHandler, 
 from rs.ai.requested_strike.handlers.shop_purchase_handler import ShopPurchaseHandler
 from rs.ai.requested_strike.handlers.upgrade_handler import UpgradeHandler
 from rs.common.handlers.common_astrolabe_handler import CommonAstrolabeHandler
-from rs.common.handlers.common_battle_handler import CommonBattleHandler
+from rs.ai.requested_strike.handlers.battle_handler import get_ironclad_battle_handler
 from rs.common.handlers.common_campfire_handler import CommonCampfireHandler
 from rs.common.handlers.card_reward.common_card_reward_handler import CommonCardRewardHandler
 from rs.common.handlers.common_chest_handler import CommonChestHandler
@@ -38,7 +38,7 @@ REQUESTED_STRIKE: AiStrategy = AiStrategy(
     character=Character.IRONCLAD,
     handlers=requested_strike_custom_battle_handlers + [
         CommonAstrolabeHandler(CARD_REMOVAL_PRIORITY_LIST),
-        CommonBattleHandler(),
+        get_ironclad_battle_handler(),
 
         # General Stuff
         BossRelicHandler(),

@@ -23,6 +23,28 @@ default_desired_choices = [
     'choose a colorless card to obtain',
 ]
 
+# In Chinese game environment, CommunicationMod sends GBK-encoded choice_list text
+# which gets corrupted when Python reads as UTF-8. Match by option position instead of text.
+_NEOW_POSITION_MAP = {
+    # First Neow (before floor 1): 4 options in fixed positions
+    'obtain a random rare card': {0},
+    'obtain 3 random potions': {1},
+    'receive a curse. obtain a random rare card': {2},
+    'lose your starting relic obtain a random boss relic': {3},
+    # Later Neow options: can be at any position
+    'choose a card to obtain': {0, 1, 2, 3},
+    'upgrade a card': {0, 1, 2, 3},
+    'obtain 100 gold': {0, 1, 2, 3},
+    'transform a card': {0, 1, 2, 3},
+    'remove a card from your deck': {0, 1, 2, 3},
+    'max hp +8': {0, 1, 2, 3},
+    'max hp +7': {0, 1, 2, 3},
+    'max hp +14': {0, 1, 2, 3},
+    'obtain a random common relic': {0, 1, 2, 3},
+    'enemies in your next three combats have 1 hp': {0, 1, 2, 3},
+    'choose a colorless card to obtain': {0, 1, 2, 3},
+}
+
 
 class CommonNeowHandler(Handler):
 
@@ -40,12 +62,28 @@ class CommonNeowHandler(Handler):
                 return HandlerAction(commands=[p_delay_s, "choose 0"])
             return HandlerAction(commands=["choose 0"])
 
-        choice_list = state.get_choice_list()
-        raw_choice_list = state.game_state()["choice_list"]
+        options = state.game_state()["screen_state"].get("options", [])
 
-        for choice in self.desired_choices:
-            if choice in choice_list:
-                idx = choice_list.index(choice)
+        # Try desired_choices in priority order, matching by option position
+        for desired in self.desired_choices:
+            positions = _NEOW_POSITION_MAP.get(desired, set())
+            for pos in positions:
+                if pos >= len(options):
+                    continue
+                opt = options[pos]
+                if opt.get("disabled", False):
+                    continue
+                idx = opt["choice_index"]
                 if presentation_mode:
                     return HandlerAction(commands=[p_delay, "choose " + str(idx), "wait 30"])
                 return HandlerAction(commands=["choose " + str(idx), "wait 30"])
+
+        # Fallback: pick first non-disabled option
+        for opt in options:
+            if not opt.get("disabled", False):
+                idx = opt["choice_index"]
+                if presentation_mode:
+                    return HandlerAction(commands=[p_delay, "choose " + str(idx), "wait 30"])
+                return HandlerAction(commands=["choose " + str(idx), "wait 30"])
+
+        return HandlerAction(commands=["wait 30"])
