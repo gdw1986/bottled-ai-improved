@@ -266,6 +266,9 @@ def get_card_effects(card: CardInterface, player: PlayerInterface, draw_pile: Li
                             applies_powers={PowerId.WEAKENED: 2})]
     if card.id == CardId.APOTHEOSIS:
         return [CardEffects(target=TargetType.SELF, post_hooks=[apotheosis_post_hook])]
+    if card.id == CardId.ARMAMENTS:
+        return [CardEffects(block=5 if not card.upgrade else 8, target=TargetType.SELF,
+                            post_hooks=[armaments_post_hook])]
     if card.id == CardId.HAND_OF_GREED:
         return [CardEffects(target=TargetType.MONSTER, damage=20 if not card.upgrade else 25, hits=1)]
     if card.id == CardId.MASTER_OF_STRATEGY:

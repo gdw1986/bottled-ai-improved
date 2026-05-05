@@ -10,8 +10,10 @@ Changes from the generic comparator:
 from typing import List, Optional
 
 from rs.calculator.battle_state import BattleState
+from rs.calculator.enums.card_id import CardId
 from rs.calculator.enums.power_id import PowerId
 from rs.calculator.powers import DEBUFFS
+from rs.game.card import CardType
 from rs.common.comparators.common_general_comparator import (
     CommonGeneralComparator,
     Comparison,
@@ -38,6 +40,7 @@ from rs.common.comparators.core.comparisons import (
     preserve_revive_options, killed_with_lesson_learned,
     avoid_inconvenient_time_warp, stance_is_calm, stance_is_not_wrath,
     no_blasphemy,
+    least_nob_adjusted_scaling_damage,
     most_tranquility,
     most_block_saved_for_next_turn,
     lowest_health_edge_monster,
@@ -143,17 +146,18 @@ def prefers_strength_tiebreaker(best: CA, challenger: CA) -> Optional[bool]:
 
 
 def prefers_armaments_played(best: CA, challenger: CA) -> Optional[bool]:
-    """When Armaments+ is in hand, prefer the path that plays it.
+    """When Armaments+ is in hand, prefer the path that actually played it.
 
-    Detects which path consumed the Armaments+ card from the original hand.
-    Does NOT rely on c.upgrade in simulated states (the simulator doesn't
-    implement Armaments's upgrade-all-cards-in-hand effect).
+    The simulator does NOT model Armaments's upgrade-all-cards-in-hand effect
+    (card_effects.py has no implementation), so the simulated state shows
+    identical outcomes whether Armaments+ was played or not.
 
-    Positioned after battle_won/lost + threat assessment, before generic
-    damage comparisons.
+    This function uses the `armaments_was_played` flag set in `resolve_card_play`
+    to detect whether Armaments+ was consumed in each path's play sequence.
+    (We can't check hand because end_turn() already cleared it by comparison time.)
+
+    Positioned after survival/threat checks but before generic damage metrics.
     """
-    from rs.calculator.enums.card_id import CardId
-
     # Only fires when Armaments+ is in original (real-game) hand
     has_armaments_plus = any(
         c.id == CardId.ARMAMENTS and c.upgrade >= 1
@@ -162,15 +166,57 @@ def prefers_armaments_played(best: CA, challenger: CA) -> Optional[bool]:
     if not has_armaments_plus:
         return None
 
-    # Detect which path consumed Armaments+
-    best_kept = any(c.id == CardId.ARMAMENTS for c in best.state.hand)
-    chal_kept = any(c.id == CardId.ARMAMENTS for c in challenger.state.hand)
+    best_played = best.state.armaments_was_played
+    chal_played = challenger.state.armaments_was_played
 
-    if best_kept and not chal_kept:
-        return True   # challenger played Armaments+ → prefer it
-    if chal_kept and not best_kept:
-        return False  # best already played Armaments+ → keep it
-    return None  # neither or both consumed → other comparisons decide
+    if best_played != chal_played:
+        return chal_played  # prefer path that played Armaments+
+    return None  # both or neither played → other comparisons decide
+
+
+def prefers_strength_gain(best: CA, challenger: CA) -> Optional[bool]:
+    """When strength-granting cards AND attack cards are in the original hand,
+    prefer paths that gain more strength this turn.
+
+    Ironclad's strength scaling means playing Inflame/Spot Weakness before
+    attacks can turn Strikes from 6→8+ damage. But the simulator evaluates
+    each turn independently — a path playing 3 Strikes (18 dmg) out-scores
+    Inflame + 2 Strikes (16 dmg +2 STR). The +2 STR value only manifests
+    across future turns, which the single-turn evaluation misses.
+
+    This function nudges paths toward playing strength cards early in the
+    fight by comparing strength gained. Positioned AFTER survival/threat
+    checks so we never sacrifice survival for strength.
+    """
+    # Cards that directly increase player STRENGTH
+    strength_granting = {
+        CardId.INFLAME,
+        CardId.SPOT_WEAKNESS,
+        CardId.FLEX,
+        CardId.LIMIT_BREAK,
+        CardId.DEMON_FORM,
+    }
+
+    original = challenger.original
+    has_strength_card = any(
+        c.id in strength_granting for c in original.hand
+    )
+    if not has_strength_card:
+        return None
+
+    has_attack = any(
+        c.type == CardType.ATTACK for c in original.hand
+    )
+    if not has_attack:
+        return None  # no attacks to benefit from +STR yet
+
+    original_str = original.player.powers.get(PowerId.STRENGTH, 0)
+    best_str_gain = best.state.player.powers.get(PowerId.STRENGTH, 0) - original_str
+    chal_str_gain = challenger.state.player.powers.get(PowerId.STRENGTH, 0) - original_str
+
+    if best_str_gain != chal_str_gain:
+        return chal_str_gain > best_str_gain
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -184,35 +230,41 @@ ironclad_comparisons: List[Comparison] = [
     preserve_revive_options,
     most_optimal_winning_battle,
 
-    # 2. Threat assessment
+    # 2. Gremlin Nob: account for future damage from skills increasing Enrage strength
+    least_nob_adjusted_scaling_damage,
+
+    # 3. Threat assessment
     prefers_block_under_threat,            # High threat → more block
     penalizes_low_hp_setup_ironclad,       # Low HP → minimize damage
     prefers_setup_when_safe,               # Safe → play powers
 
-    # 3. Enemy management — dangerous targets first
+    # 4. Enemy management — dangerous targets first
     prefers_killing_dangerous_enemy_first,  # Kill Red Slaver / Gremlin minions
 
-    # 3.3 Ironclad-specific: when outcomes are tied, prefer strength buildup
-    prefers_strength_tiebreaker,
-
-    # 3.5. Hand quality — Armaments+ upgrade value evaluated before generic damage
+    # 4.2. Hand quality — Armaments+ upgrade value evaluated before strength/damage
     prefers_armaments_played,
 
-    # 4. Generic damage / kill metrics
+    # 4.3 Ironclad-specific: prioritize playing strength cards when attacks are available
+    prefers_strength_gain,
+
+    # 4.4 Ironclad-specific: when outcomes are tied, prefer strength buildup
+    prefers_strength_tiebreaker,
+
+    # 5. Generic damage / kill metrics
     most_dead_monsters,
     lowest_health_monster,
     lowest_total_monster_health,
 
-    # 5. Status effects on enemies
+    # 6. Status effects on enemies
     most_enemy_vulnerable,
     most_enemy_weak,
 
-    # 6. Damage / protection
+    # 7. Damage / protection
     most_block_saved_for_next_turn,
     least_incoming_damage_over_1,
     least_incoming_damage,
 
-    # 6. Resource economy
+    # 8. Resource economy
     most_free_early_draw,
     most_free_draw,
     most_lasting_intangible,
@@ -222,11 +274,11 @@ ironclad_comparisons: List[Comparison] = [
     most_powered_up_ritual_dagger,
     kept_expensive_decreasing_cost_retain_cards,
 
-    # 7. Enemy debuffs
+    # 9. Enemy debuffs
     lowest_barricaded_block,
     lowest_enemy_plated_armor,
 
-    # 8. Defect compat (keep for shared code paths)
+    # 10. Defect compat (keep for shared code paths)
     most_orb_slots,
     most_channeled_orbs,
     most_draw_pay_early,
@@ -240,7 +292,7 @@ ironclad_comparisons: List[Comparison] = [
     killed_with_lesson_learned,
     avoid_inconvenient_time_warp,
 
-    # 9. Watcher compat (keep for shared code paths)
+    # 11. Watcher compat (keep for shared code paths)
     no_blasphemy,
     stance_is_calm,
     stance_is_not_wrath,

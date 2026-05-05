@@ -628,6 +628,33 @@ class CalculatorCardsTest(CalculatorTestFixture):
         self.assertEqual(play.state.exhaust_pile[0].upgrade, 1)
         self.see_player_exhaust_count(play, 2)
 
+    def test_armaments_upgrades_one_card_in_hand(self):
+        state = self.given_state(CardId.ARMAMENTS)
+        state.hand.append(get_card(CardId.STRIKE_R))
+        state.hand.append(get_card(CardId.DEFEND_R))
+        state.hand.append(get_card(CardId.BURN))
+
+        play = self.when_playing_the_first_card(state)
+
+        self.assertEqual(1, play.state.hand[0].upgrade)
+        self.assertEqual(0, play.state.hand[1].upgrade)
+        self.assertEqual(0, play.state.hand[2].upgrade)
+        self.see_player_has_block(play, 5)
+
+    def test_armaments_plus_upgrades_all_cards_in_hand(self):
+        state = self.given_state(CardId.ARMAMENTS, upgrade=1)
+        state.hand.append(get_card(CardId.STRIKE_R))
+        state.hand.append(get_card(CardId.DEFEND_R))
+        state.hand.append(get_card(CardId.BURN))
+
+        play = self.when_playing_the_first_card(state)
+
+        self.assertEqual(1, play.state.hand[0].upgrade)
+        self.assertEqual(1, play.state.hand[1].upgrade)
+        self.assertEqual(0, play.state.hand[2].upgrade)
+        self.assertTrue(play.state.armaments_was_played)
+        self.see_player_has_block(play, 8)
+
     def test_hand_of_greed(self):
         state = self.given_state(CardId.HAND_OF_GREED)
         play = self.when_playing_the_first_card(state)

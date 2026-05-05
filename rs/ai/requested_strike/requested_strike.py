@@ -5,8 +5,8 @@ from rs.ai.requested_strike.config import CARD_REMOVAL_PRIORITY_LIST, DESIRED_CA
 from rs.ai.requested_strike.handlers.boss_relic_handler import BossRelicHandler
 from rs.ai.requested_strike.handlers.event_handler import EventHandler
 from rs.ai.requested_strike.handlers.neow_handler import NeowHandler
-from rs.ai.requested_strike.handlers.potions_handler import PotionsBossHandler, PotionsEventFightHandler, \
-    PotionsEliteHandler
+from rs.ai.requested_strike.handlers.potions_handler import PotionsScalingHandler, PotionsHealHandler, \
+    PotionsEmergencyHandler
 from rs.ai.requested_strike.handlers.shop_purchase_handler import ShopPurchaseHandler
 from rs.ai.requested_strike.handlers.upgrade_handler import UpgradeHandler
 from rs.common.handlers.common_astrolabe_handler import CommonAstrolabeHandler
@@ -18,7 +18,7 @@ from rs.common.handlers.common_combat_reward_handler import CommonCombatRewardHa
 from rs.common.handlers.common_grid_select_handler import CommonGridSelectHandler
 from rs.common.handlers.common_mass_discard_handler import CommonMassDiscardHandler
 from rs.ai.requested_strike.handlers.map_handler import IroncladMapHandler
-from rs.common.handlers.common_purge_handler import CommonPurgeHandler
+from rs.ai.requested_strike.handlers.purge_handler import PurgeHandler
 from rs.common.handlers.common_scry_handler import CommonScryHandler
 from rs.common.handlers.common_shop_entrance_handler import CommonShopEntranceHandler
 from rs.common.handlers.common_transform_handler import CommonTransformHandler
@@ -27,10 +27,10 @@ from rs.machine.character import Character
 from rs.machine.handlers.handler import Handler
 
 requested_strike_custom_battle_handlers: List[Handler] = [
-    # Potions Handlers First
-    PotionsBossHandler(),
-    PotionsEventFightHandler(),
-    PotionsEliteHandler(),
+    # Potion Handlers — scaling first (proactive), then heal, then emergency (reactive)
+    PotionsScalingHandler(),
+    PotionsHealHandler(),
+    PotionsEmergencyHandler(),
 ]
 
 REQUESTED_STRIKE: AiStrategy = AiStrategy(
@@ -45,7 +45,7 @@ REQUESTED_STRIKE: AiStrategy = AiStrategy(
         UpgradeHandler(),
         CommonTransformHandler(CARD_REMOVAL_PRIORITY_LIST),
         CommonGridSelectHandler(CARD_REMOVAL_PRIORITY_LIST),
-        CommonPurgeHandler(CARD_REMOVAL_PRIORITY_LIST),
+        PurgeHandler(),
         CommonCombatRewardHandler(desired_potions=DESIRED_POTIONS),
         DynamicCardRewardHandler(DESIRED_CARDS_FOR_DECK),
         NeowHandler(),

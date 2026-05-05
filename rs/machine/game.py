@@ -84,7 +84,15 @@ class Game:
                 raise Exception("ah I didn't know what to do!")
 
     def __send_command(self, command: str):
-        self.last_state = GameState(json.loads(self.client.send_message(command)), self.the_bots_memory_book)
+        try:
+            response = self.client.send_message(command)
+            if not response or not response.strip():
+                log_to_run(f"Empty response from game for command: {command}")
+                raise ConnectionError("Game returned empty response — child process likely dead")
+            self.last_state = GameState(json.loads(response), self.the_bots_memory_book)
+        except (json.JSONDecodeError, ConnectionError, KeyError) as e:
+            log_to_run(f"Fatal error processing command '{command}': {e}")
+            raise
 
     def __send_silent_command(self, command: str):
         self.last_state = GameState(json.loads(self.client.send_message(command, silent=True)),

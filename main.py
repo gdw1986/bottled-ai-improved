@@ -16,11 +16,60 @@ from rs.machine.game import Game
 from rs.helper.logger import log, init_log, log_new_run_sequence
 
 # If there are run seeds, it will run them. Otherwise, it will use the run amount.
-run_seeds = [
-    #'LGZ12EEMFGUK',
-    'SC4D2Q4ZQVPB'
-]
-run_amount = 1
+# run_seeds = [
+#     '75MD25VMB8CR',
+# 'K7AURB80PDYR',
+# '8Y8KRGADR2YE',
+# 'EYQGFIKNNTVV',
+# '7VECZLGSCEYI',
+# 'M1KF5CR20A01',
+# '721G0DHYN0R2',
+# 'BXD9ACW35VH',
+# 'VVL2LJ8NMWRY',
+# 'CFNV2X810SM4',
+# 'DP4G29AQZJM2',
+# 'HKVP462VKFT2',
+# 'L5BG57LF16GY',
+# 'N2DQTYZRSAQ0',
+# 'EMU9YMSYH9QH',
+# 'T41XAG6BABU6',
+# 'S4UC7W4TM9RY',
+# 'ZFCDIN4NZ45W',
+# 'GPJY9RLR30WN',
+# 'ISU4N9DT3DC0',
+# '5LSEI5KL83FX',
+# 'H728LUIKSBW',
+# '77DFMD2S328D',
+# 'G70SASBSIFR7',
+# 'A8JF9AF8Z79K',
+# 'SBVUILNMTZA2',
+# '9WR3EVSDTC15',
+# 'NGU4TGGFTULS',
+# '11K0AVUIXNA3',
+# '16EU8E4P34ZQ',
+# 'MG10R9WA4NMA',
+# 'SYBBKJ44I4JT',
+# '4UD2VDRZF2UW',
+# '107HXTYQEITV',
+# 'WSDF391VL4QR',
+# '1513M92JUMEE',
+# 'K2PXTVWNXHJ7',
+# 'BKA8SBY2TP7M',
+# 'PRGP77XWNZBG',
+# 'W67B42M262V9',
+# 'DZQZFR3UPYQ3',
+# 'B9E824BICP8X',
+# 'RY0E8CCJVD1J',
+# '6FVSUDBQDEPX',
+# 'GQN0PEN4XUUL',
+# '7DEVQ0EG76UY',
+# 'H3TLHPUMKLP1',
+# 'KLL0XCPH7XD8',
+# '1Y0PNICHZMB5',
+# 'Y28X68WL701F'
+# ]
+run_seeds = []
+run_amount = 50
 strategy = REQUESTED_STRIKE
 
 if __name__ == "__main__":

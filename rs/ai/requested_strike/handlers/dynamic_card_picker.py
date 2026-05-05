@@ -19,9 +19,11 @@ from typing import Optional
 # Loaded once at import time
 _DATA = None
 _SYNERGIES = None
+_DATA_BY_NAME = None
+_SYNERGY_BY_PAIR = None
 
 def _load():
-    global _DATA, _SYNERGIES
+    global _DATA, _SYNERGIES, _DATA_BY_NAME, _SYNERGY_BY_PAIR
     if _DATA is not None:
         return
     data_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
@@ -29,33 +31,54 @@ def _load():
         _DATA = json.load(f)
     with open(os.path.join(data_dir, 'synergies.json'), encoding='utf-8') as f:
         _SYNERGIES = json.load(f)
+    _DATA_BY_NAME = {_normalize_card_name(k): v for k, v in _DATA.items()}
+    _SYNERGY_BY_PAIR = {}
+    for key, value in _SYNERGIES.items():
+        if '→' not in key:
+            continue
+        left, right = key.split('→', 1)
+        _SYNERGY_BY_PAIR[(_normalize_card_name(left), _normalize_card_name(right))] = value
+
+
+def _normalize_card_name(name: str) -> str:
+    return name.lower().replace('_', ' ').replace('-', ' ').strip()
 
 
 # Feature extraction (mirrors Phase 1 categories)
-ATTACK = {'Strike_R','Bash','Anger','Body Slam','Clash','Cleave','Clothesline',
-    'Dropkick','Dual Wield','Fiend Fire','Flex','Headbutt','Heavy Blade',
+ATTACK = {_normalize_card_name(c) for c in {'Strike_R','Bash','Anger','Body Slam','Clash','Cleave','Clothesline',
+    'Dropkick','Dual Wield','Fiend Fire','Headbutt','Heavy Blade',
     'Hemokinesis','Immolate','Infernal Blade','Iron Wave','Perfected Strike',
     'Pommel Strike','Pummel','Rampage','Reaper','Reckless Charge',
     'Searing Blow','Sever Soul','Sword Boomerang','Thunderclap','Twin Strike',
     'Uppercut','Whirlwind','Wild Strike','Blood for Blood','Carnage',
-    'Feed','Havoc','Bludgeon','RecklessCharge'}
-BLOCK = {'Defend_R','Armaments','Ghostly Armor','Impervious','Iron Wave',
+    'Feed','Havoc','Bludgeon','RecklessCharge'}}
+BLOCK = {_normalize_card_name(c) for c in {'Defend_R','Armaments','Ghostly Armor','Impervious','Iron Wave',
     'Power Through','Second Wind','Shrug It Off','True Grit','Flame Barrier',
-    'Sentinel','Entrench'}
-DRAW = {'Battle Trance','Burning Pact','Offering','Pommel Strike','Warcry',
-    'Dark Embrace','Evolve','Shrug It Off'}
-SCALE = {'Spot Weakness','Inflame','Demon Form','Limit Break','Barricade',
+    'Sentinel','Entrench'}}
+DRAW = {_normalize_card_name(c) for c in {'Battle Trance','Burning Pact','Offering','Pommel Strike','Warcry',
+    'Dark Embrace','Evolve','Shrug It Off'}}
+SCALE = {_normalize_card_name(c) for c in {'Spot Weakness','Inflame','Demon Form','Limit Break','Barricade',
     'Corruption','Feel No Pain','Rupture','Brutality','Combust',
-    'Juggernaut','Metallicize','Rage','Dark Embrace'}
-AOE = {'Cleave','Whirlwind','Immolate','Thunderclap'}
-WEAK = {'Clothesline','Shockwave','Uppercut','Disarm'}
-VULN = {'Bash','Shockwave','Uppercut','Thunderclap'}
-ENERGY = {'Offering','Seeing Red','Bloodletting','Berserk'}
+    'Juggernaut','Metallicize','Rage','Dark Embrace'}}
+AOE = {_normalize_card_name(c) for c in {'Cleave','Whirlwind','Immolate','Thunderclap'}}
+WEAK = {_normalize_card_name(c) for c in {'Clothesline','Shockwave','Uppercut','Disarm'}}
+VULN = {_normalize_card_name(c) for c in {'Bash','Shockwave','Uppercut','Thunderclap'}}
+ENERGY = {_normalize_card_name(c) for c in {'Offering','Seeing Red','Bloodletting','Berserk'}}
+
+STRENGTH_SOURCES = {_normalize_card_name(c) for c in {'Inflame', 'Spot Weakness', 'Demon Form', 'Flex'}}
+STRENGTH_MULTIPLIERS = {_normalize_card_name(c) for c in {'Limit Break'}}
+STRENGTH_PAYOFFS = {_normalize_card_name(c) for c in {
+    'Heavy Blade', 'Sword Boomerang', 'Pummel', 'Whirlwind', 'Reaper',
+    'Twin Strike', 'Perfected Strike', 'Dropkick',
+}}
+PREMIUM_STRENGTH_PAYOFFS = {_normalize_card_name(c) for c in {
+    'Heavy Blade', 'Sword Boomerang', 'Pummel', 'Whirlwind', 'Reaper',
+}}
 
 
 def deck_features(deck_card_names: list[str]) -> dict:
     """Extract feature vector from list of card names (strings)."""
-    n = max(len(deck_card_names), 1)
+    deck_card_names = [_normalize_card_name(c) for c in deck_card_names]
     s = set(deck_card_names)
     cnt = lambda cats: sum(1 for c in deck_card_names if c in cats)
     has = lambda cats: 1 if s & cats else 0
@@ -64,9 +87,50 @@ def deck_features(deck_card_names: list[str]) -> dict:
         'has_draw': has(DRAW),    'has_scaling': has(SCALE),
         'has_aoe': has(AOE),      'has_weak': has(WEAK),
         'has_vuln': has(VULN),    'has_energy': has(ENERGY),
+        'has_strength_source': has(STRENGTH_SOURCES),
+        'has_strength_multiplier': has(STRENGTH_MULTIPLIERS),
+        'has_strength_payoff': has(STRENGTH_PAYOFFS),
         'attack_cnt': cnt(ATTACK), 'block_cnt': cnt(BLOCK),
         'draw_cnt': cnt(DRAW),    'aoe_cnt': cnt(AOE),
     }
+
+
+def strength_synergy_bonus(candidate: str, deck_card_names: list[str], act: int) -> float:
+    """Small deterministic nudge toward coherent strength packages."""
+    candidate = _normalize_card_name(candidate)
+    deck = {_normalize_card_name(c) for c in deck_card_names}
+    has_source = bool(deck & STRENGTH_SOURCES)
+    has_multiplier = bool(deck & STRENGTH_MULTIPLIERS)
+    has_payoff = bool(deck & STRENGTH_PAYOFFS)
+
+    bonus = 0.0
+    if candidate in STRENGTH_SOURCES:
+        bonus += 0.05
+        if has_payoff:
+            bonus += 0.05
+        if act <= 1:
+            bonus += 0.02
+    elif candidate in STRENGTH_MULTIPLIERS:
+        bonus += 0.09 if has_source else -0.04
+        if has_payoff:
+            bonus += 0.02
+    elif candidate in PREMIUM_STRENGTH_PAYOFFS:
+        if has_source or has_multiplier:
+            bonus += 0.08
+        elif act <= 1:
+            bonus += 0.02
+
+    return max(min(bonus, 0.12), -0.04)
+
+
+def _lookup_card_data(candidate: str):
+    _load()
+    assert _DATA_BY_NAME is not None
+    candidate_key = _normalize_card_name(candidate)
+    return (
+        _DATA_BY_NAME.get(candidate_key)
+        or _DATA_BY_NAME.get(f'{candidate_key}+1')
+    )
 
 
 def pick_best_card(candidates: list[str], deck_card_names: list[str],
@@ -83,7 +147,7 @@ def pick_best_card(candidates: list[str], deck_card_names: list[str],
         Best card name (base form) or None if data insufficient for all
     """
     _load()
-    assert _DATA is not None and _SYNERGIES is not None
+    assert _DATA is not None and _SYNERGY_BY_PAIR is not None
     feats = deck_features(deck_card_names)
 
     # Determine size bucket
@@ -103,14 +167,8 @@ def pick_best_card(candidates: list[str], deck_card_names: list[str],
     best_score = -999.0
 
     for candidate in candidates:
-        # Look up candidate in data — try exact match first, then +1 variant
-        card_data = None
-        lookup_key = candidate
-        if lookup_key in _DATA:
-            card_data = _DATA[lookup_key]
-        elif f'{candidate}+1' in _DATA:
-            lookup_key = f'{candidate}+1'
-            card_data = _DATA[lookup_key]
+        # Look up candidate in data — names from the game are lowercase, data keys are not.
+        card_data = _lookup_card_data(candidate)
 
         if card_data is None:
             continue
@@ -157,21 +215,18 @@ def pick_best_card(candidates: list[str], deck_card_names: list[str],
         # For each card already in deck, check synergy pairs "deck_card→candidate"
         # Synergy delta weighted by log(n), capped at +0.15 to prevent runaway.
         synergy_bonus = 0.0
+        candidate_key = _normalize_card_name(candidate)
         for deck_card in deck_card_names:
-            for suffix in ('', '+1'):
-                key = f'{deck_card}{suffix}→{candidate}'
-                if key in _SYNERGIES:
-                    s = _SYNERGIES[key]
-                    if s['n'] >= 10:
-                        synergy_bonus += s['delta'] * math.log(s['n']) / math.log(100)
-                # Also try the reverse: candidate→deck_card
-                key_rev = f'{candidate}→{deck_card}{suffix}'
-                if key_rev in _SYNERGIES:
-                    s = _SYNERGIES[key_rev]
+            deck_key = _normalize_card_name(deck_card)
+            for key in ((deck_key, candidate_key), (candidate_key, deck_key),
+                        (f'{deck_key}+1', candidate_key), (candidate_key, f'{deck_key}+1')):
+                if key in _SYNERGY_BY_PAIR:
+                    s = _SYNERGY_BY_PAIR[key]
                     if s['n'] >= 10:
                         synergy_bonus += s['delta'] * math.log(s['n']) / math.log(100)
         synergy_bonus = min(synergy_bonus, 0.15)
         score += synergy_bonus
+        score += strength_synergy_bonus(candidate, deck_card_names, act)
 
         if score > best_score:
             best_score = score

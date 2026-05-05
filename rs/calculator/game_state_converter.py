@@ -240,12 +240,13 @@ def battlestate_deepcopy(game_state: BattleState) -> BattleState:
     total_random_poison_added = game_state.total_random_poison_added
     amount_scryed = game_state.amount_scryed
     saved_block_for_next_turn = game_state.saved_block_for_next_turn
+    armaments_was_played = game_state.armaments_was_played
 
     new_battle_state = BattleState(player, hand, discard_pile, exhaust_pile, draw_pile, monsters, relics, must_discard,
                        amount_to_discard, cards_discarded_this_turn, total_random_damage_dealt, total_random_poison_added,
                        orbs=orbs, orb_slots=orb_slots, memory_general=memory_general, memory_by_card=memory_by_card,
                        amount_scryed = amount_scryed, saved_block_for_next_turn = saved_block_for_next_turn, potions=potions,
-                       amount_to_exhaust=amount_to_exhaust)
+                       amount_to_exhaust=amount_to_exhaust, armaments_was_played=armaments_was_played)
 
     new_battle_state.draw_free_early = game_state.draw_free_early
     new_battle_state.draw_free = game_state.draw_free

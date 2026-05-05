@@ -21,6 +21,8 @@ class CommonGridSelectHandler(Handler):
         if state.game_state().get("screen_type") != "GRID":
             return False
         screen_state = state.game_state().get("screen_state", {})
+        if screen_state.get("for_purge"):
+            return False
         # Handle any GRID with num_cards > 0 (multi-select)
         num_cards = screen_state.get("num_cards", 0)
         return num_cards > 0

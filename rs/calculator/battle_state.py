@@ -34,7 +34,8 @@ class BattleState(BattleStateInterface):
                  total_random_damage_dealt: int = 0, total_random_poison_added: int = 0,
                  orbs: List[Tuple[OrbId, int]] = None, orb_slots: int = 0, memory_general: dict = None,
                  memory_by_card: dict[CardId, dict[ResetSchedule, dict[str, int]]] = None, amount_scryed: int = 0,
-                 saved_block_for_next_turn: int = 0, potions: Potions = None, amount_to_exhaust: int = 0):
+                 saved_block_for_next_turn: int = 0, potions: Potions = None, amount_to_exhaust: int = 0,
+                 armaments_was_played: bool = False):
         self.player: PlayerInterface = player
         self.hand: List[CardInterface] = [] if hand is None else hand
         self.discard_pile: List[CardInterface] = [] if discard_pile is None else discard_pile
@@ -58,6 +59,7 @@ class BattleState(BattleStateInterface):
             CardId, dict[ResetSchedule, dict[str, int]]] = {} if memory_by_card is None else memory_by_card
         self.amount_scryed: int = amount_scryed
         self.saved_block_for_next_turn: int = saved_block_for_next_turn
+        self.armaments_was_played: bool = armaments_was_played
         self.draw_free_early: int = 0
         self.draw_free: int = 0
         self.draw_pay_early: int = 0
@@ -364,6 +366,10 @@ class BattleState(BattleStateInterface):
             self.add_memory_value(last_played, CardType.OTHER)
 
         self.add_memory_value(MemoryItem.CARDS_THIS_TURN, 1)
+
+        # track key cards for comparison functions that need to know what was played
+        if card.id == CardId.ARMAMENTS and card.upgrade >= 1:
+            self.armaments_was_played = True
 
         # dispose of cards being played
         if card in self.hand:  # b/c some cards like fiend fire, will destroy themselves before they follow this route

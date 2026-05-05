@@ -1,4 +1,5 @@
 from typing import List
+import random
 
 from rs.calculator.battle_state import BattleState, Play
 from rs.calculator.game_state_converter import battlestate_deepcopy
@@ -40,9 +41,11 @@ def get_paths(path: PlayPath, paths: dict[str, PlayPath]):
         get_paths(new_path, paths)
 
 
-def get_paths_bfs(state: BattleState, max_path_count: int):
+def get_paths_bfs(state: BattleState, max_path_count: int, shuffle_seed: int | None = None):
     explored_paths: dict[str, PlayPath] = {}
     unexplored_paths = [PlayPath([], battlestate_deepcopy(state))]
+
+    rng = random.Random(shuffle_seed) if shuffle_seed is not None else None
 
     while len(explored_paths) < max_path_count:
         # as long as there are unexplored paths, keep progressing
@@ -62,6 +65,12 @@ def get_paths_bfs(state: BattleState, max_path_count: int):
             plays = path.state.get_exhausts()
         else:
             plays = path.state.get_plays()
+
+        # Shuffle play order if seeded — this varies BFS exploration and gives
+        # different prioritization when multiple paths have equal comparator scores.
+        if rng is not None:
+            plays = list(plays)
+            rng.shuffle(plays)
 
         for play in plays:
             new_state: BattleState = battlestate_deepcopy(path.state)

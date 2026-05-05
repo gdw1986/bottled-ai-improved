@@ -72,6 +72,19 @@ def apotheosis_post_hook(state: BattleStateInterface, effect: CardEffectsInterfa
                 c.upgrade += 1
 
 
+def armaments_post_hook(state: BattleStateInterface, effect: CardEffectsInterface, card: CardInterface,
+                        target_index: int = -1):
+    cards_to_upgrade = [c for c in state.hand if c is not card and c.upgrade == 0 and c.id != CardId.BURN]
+    if not cards_to_upgrade:
+        return
+
+    if card.upgrade:
+        for c in cards_to_upgrade:
+            c.upgrade += 1
+    else:
+        cards_to_upgrade[0].upgrade += 1
+
+
 def heel_hook_post_hook(state: BattleStateInterface, effect: CardEffectsInterface, card: CardInterface,
                         target_index: int = -1):
     if target_index > -1:
