@@ -6,4 +6,8 @@ class TestEventHandler(PmoTestHandlerFixture):
     handler = EventHandler
 
     def test_falling(self):
-        self.execute_handler_tests('/event/event_falling_pmo.json', ['choose 2', 'wait 30'])
+        # Now uses CommonEventHandler's priority-based Falling logic instead of hardcoded "choose 2".
+        # With correct card name mapping, "strike" matches removal_priority_list → choose 1.
+        # This is better than the old blind "lose the attack" approach because it respects
+        # strategy priorities (e.g., won't lose a valuable attack card if a basic Strike is available).
+        self.execute_handler_tests('/event/event_falling_pmo.json', ['choose 1', 'wait 30'])

@@ -1,7 +1,7 @@
 # bottled-ai-improved 优化日志
 
-> **最后更新**: 2026-05-04 12:30  
-> **已修改文件**: 5 个 (+173/-52 行)
+> **最后更新**: 2026-05-06 08:20
+> **已修改文件**: 8 个 (+73/-17 行，不含 main.py)
 > **AI 接手即读**：本文件包含项目全貌、已完成改动、待办计划，可直接继续工作。
 
 ---
@@ -14,7 +14,7 @@
 | 本地路径 | `C:\Program Files (x86)\Steam\steamapps\common\SlayTheSpire\bottled-ai-improved` |
 | 介绍 | Slay the Spire AI Bot，通过 CommunicationMod 获得游戏状态，Python handler 做决策，Rust 做战斗演算 |
 | 当前策略 | `requested_strike` — 铁甲战士 Perfected Strike 流派 |
-| 核心引擎 | Rust (`rs/`) + Python handlers |
+| 核心引擎 | Python（Rust 命名风格模块） |
 | 数据 | `ironclad_clean.json` — 35,691 局人类玩家 Ironclad 运行记录 |
 
 ## 二、项目结构
@@ -179,11 +179,80 @@ Dead Branch (46), Chemical X (18 buys)
 
 Armaments, Whirlwind, Flex, True Grit, Evolve, Pommel Strike
 
+### P1 (2026-05-06) — 战斗比较器修复 + Pwnder 策略补全 + 坠落事件智能决策
+
+**背景**：AI 不使用 Disarm、Headbutt、Perfected Strike 三张卡，根因是比较器链 bug 和卡牌定义缺失。
+
+**修改文件**：
+- `rs/common/comparators/core/comparisons.py`
+- `rs/calculator/card_effects.py`
+- `rs/calculator/cards.py`
+- `rs/calculator/enums/card_id.py`
+- `rs/machine/state.py`
+- `rs/ai/pwnder_my_orbs/config.py`
+- `rs/ai/pwnder_my_orbs/handlers/event_handler.py`
+- `rs/ai/pwnder_my_orbs/pwnder_my_orbs.py`
+- `tests/ai/pwnder_my_orbs/handlers/test_event_handler.py`
+
+#### 1. 战斗比较器链修复
+
+`least_nob_adjusted_scaling_damage` 在非 Gremlin Nob 战斗中退化：
+- **Bug**：无 Nob 时，`nob_adjusted_scaling_damage()` 返回 0，等价于"最低 HP 损失"比较
+- **影响**：覆盖后续伤害比较器，导致 AI 不愿做有利伤害交换（宁可少受 5 点伤也不打 18 点伤害）
+- **修复**：无 Nob 时 `return None`，让决策权交给 `lowest_health_monster` 等比较器
+
+#### 2. 卡牌战斗定义补全
+
+| 卡牌 | 修复内容 |
+|------|----------|
+| Disarm+ | 力量值 `+3` → `-3`（原本写成正值，等于给敌人加力量） |
+| Headbutt | 新增 `CardId.HEADBUTT`、卡牌定义（1 费攻击）、战斗效果（9/14 伤害，单体） |
+
+#### 3. 坠落事件卡名映射（state.py）
+
+Falling 事件选项文本包含卡牌名，需匹配配置列表做决策：
+- **中文游戏**：选项含"失去"+中文名（如"失去宁静+"），需翻译为英文配置键名
+- **英文游戏**：选项含"Lose"+英文名（如"Lose Tranquility+"），直接小写化即可
+- **关键修复**：卡牌 ID 含角色后缀（`Strike_R`/`Strike_P`），需剥离后缀才能匹配通用键名 `strike`
+- **`is_chinese()` 检测**：区分中英文游戏，避免英文显示名被错误映射为 ID 名（如 `Tranquility` → `clear the mind`）
+
+映射流程：
+```
+Falling 选项文本 → 提取卡名 → is_chinese()? 
+  → Yes: cn_to_en 映射 (中文→英文配置键名)
+  → No: 直接小写化 (英文显示名已是配置键名)
+→ 去除 "+" 后缀 → 与 removal_priority_list / DESIRED_CARDS_FOR_DECK 匹配
+```
+
+#### 4. Pwnder My Orbs 策略补全
+
+| 问题 | 修复 |
+|------|------|
+| `DESIRED_CARDS_FOR_DECK` 只有 3 张铁甲卡（占位符） | 替换为 26 张真实 Defect 卡，按优先级分 5 组 |
+| EventHandler 收到空 `cards_desired_for_deck=[]` | 改为传入 `DESIRED_CARDS_FOR_DECK` |
+| Falling 事件硬编码 `choose 2`（永远删攻击牌） | 删除硬编码，走 CommonEventHandler 优先级决策 |
+
+Defect 26 张核心卡牌分组：
+```
+Group 1 (Core): electrodynamics, echo form, defragment, biased cognition, capacitor,
+                loop, core surge, fission, buffer, skim
+Group 2 (Orb):  ball lightning, cold snap, doom and gloom
+Group 3 (Atk):  sunder, streamline, ftl, sweeping beam, bullseye, compile driver
+Group 4 (Frost): glacier, coolheaded, chill
+Group 5 (Def):  charge battery, autoshields, equilibrium, reinforced body
+```
+
 ---
 
 ## 五、待办计划
 
-### P1 — Neow Bonus 优先级 + 事件阈值
+### ~~P1 — Neow Bonus 优先级 + 事件阈值~~ → 已完成 (2026-05-06)
+
+> 已完成部分：坠落事件智能决策（CommonEventHandler 优先级逻辑替代硬编码）、
+> 卡名映射（中英文通用）、Pwnder 策略补全、战斗比较器链修复。
+> Neow Bonus 重排和更多事件阈值优化移至 P2。
+
+#### ~~Neow (A15+ 胜场数据)~~ → 移至 P2
 
 #### Neow (A15+ 胜场数据)
 
@@ -218,9 +287,9 @@ Three Enemy Kill (959) >> Random Common Relic (369) > Boss Relic Swap (337) > Ma
 - Scrap Ooze → Success: 人类胜场 822 次选这个 vs 拿遗物，需评估
 - Ghosts → Ignored: 人类胜场 496 次无视幽灵（拿 3 Apparition 减半 max HP），检查 bot 当前的 Ghosts 行为
 
-### P2 — Upgrade 优先级 + 卡牌评价微调
+### P2 — Neow Bonus 重排 + 事件阈值扩展
 
-#### 升级优先级
+#### Neow (A15+ 胜场数据)
 
 人类胜场 Top 5 升级目标：
 ```
@@ -241,13 +310,17 @@ DESIRED_CARDS_FOR_DECK (config.py) 已经是数据驱动的，但一些细节：
 - **Warcry**：胜率差异 +0.178，应更积极在 Act 1 选
 - **Flex**：人类选得很多但 wr 差异小，主要是过渡牌 — 上限可能偏高
 
-### P3 — 路线/路径选择
+### P3 — Upgrade 优先级 + 卡牌评价微调
+
+#### 升级优先级
 
 未分析。35k 数据里有 `path_taken` 和 `path_per_floor`，可以分析：
 - 精英狩猎 vs 安全路线 vs 篝火路线的胜率对比
 - Act 1 最优路径策略
 
-### P4 — 战斗演算 (ironclad_comparator)
+### P4 — 路线/路径选择
+
+### P5 — 战斗演算 (ironclad_comparator)
 
 - 当前 comparator 沿用了 peaceful_pummeling 的很多 Defect/Watcher 逻辑
 - 可以针对 Ironclad 进一步精简

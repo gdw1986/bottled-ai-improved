@@ -1,4 +1,5 @@
 import json
+import re
 from typing import List
 
 from rs.calculator.interfaces.memory_items import MemoryItem
@@ -275,18 +276,59 @@ class GameState:
             return 0
         return len(orbs)
 
+    def _build_cn_to_en_card_name_map(self) -> dict[str, str]:
+        """Build a mapping from Chinese card names to lowercase English display names
+        using the current deck data.
+
+        In Chinese game mode, the option text contains Chinese display names (e.g. "宁静+")
+        while config lists use English display names (e.g. "tranquility"). This map bridges
+        that gap by mapping Chinese name -> English display name derived from card.id.
+
+        Role suffixes (_R, _P, _B, _G) are stripped from IDs so that "Strike_R" and "Strike_P"
+        both map to "strike", matching the config key format.
+        """
+        name_map = {}
+        for card in self.game_state().get("deck", []):
+            cn_name = card.get("name", "")
+            en_id = card.get("id", "")
+            if cn_name and en_id:
+                en_display = re.sub(r'(?<=[a-z])(?=[A-Z])', ' ', en_id).lower()
+                # Strip role suffix: _R (Ironclad), _P (Watcher), _B (Silent), _G (colorless)
+                en_display = re.sub(r'_[rRgGbBpP]$', '', en_display)
+                name_map[cn_name] = en_display
+        return name_map
+
     def get_falling_event_options(self) -> list:
         options = []
 
         def extract_card_from_text(text):
-            keyword = "Lose"
-            if keyword in text:
-                return text.split(keyword, 1)[1].strip()
+            # Support both English ("Lose") and Chinese ("失去") game text
+            for keyword in ("Lose", "失去"):
+                if keyword in text:
+                    return text.split(keyword, 1)[1].strip()
+            return None
+
+        def is_chinese(text):
+            """Check if text contains any non-ASCII characters (Chinese chars)."""
+            return any(ord(c) > 127 for c in text)
+
+        cn_to_en = self._build_cn_to_en_card_name_map()
 
         for option in self.screen_state()["options"]:
             if not option["disabled"]:
                 text = option["text"]
-                options.append(extract_card_from_text(text).lower())
+                extracted = extract_card_from_text(text)
+                if extracted is not None:
+                    if is_chinese(extracted):
+                        # Chinese game: translate Chinese name to English
+                        en_name = cn_to_en.get(extracted, extracted.lower())
+                        options.append(en_name)
+                    else:
+                        # English game: use the display name directly (matches config keys)
+                        options.append(extracted.lower())
+                else:
+                    # Fallback: use the full text lowercased (better than crashing)
+                    options.append(text.lower())
         for idx, choice in enumerate(options):
             options[idx] = choice.replace("+", "")
         return options

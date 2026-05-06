@@ -19,11 +19,4 @@ class EventHandler(CommonEventHandler):
                 else:
                     return "choose 1"  # Leave
 
-            # Special Falling event logic doesn't currently work with the Pwnder card reward grouping mechanic
-            case Event.FALLING:
-                if len(state.get_choice_list()) == 3:
-                    return "choose 2"  # Lose the attack
-                else:
-                    return "choose 0"  # OK our deck is weird - whatever, just lose something
-
         return super().find_event_choice(state)

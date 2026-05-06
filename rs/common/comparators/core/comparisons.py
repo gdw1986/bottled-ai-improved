@@ -1,5 +1,6 @@
 from typing import Optional
 
+from rs.calculator.enums.power_id import PowerId
 from rs.common.comparators.core.assessment import ComparatorAssessment as CA
 
 
@@ -181,6 +182,13 @@ def least_enemy_artifacts(best: CA, challenger: CA) -> Optional[bool]:
 
 
 def least_nob_adjusted_scaling_damage(best: CA, challenger: CA) -> Optional[bool]:
+    # Only apply when Gremlin Nob is present; without Nob, this metric
+    # degrades to "least HP lost" which preempts damage comparisons
+    # and prevents the AI from making favorable damage trades
+    # (e.g. taking 5 damage to deal 18 with Perfected Strike)
+    has_nob = any(m.powers.get(PowerId.ANGER_NOB, 0) for m in best.state.monsters)
+    if not has_nob:
+        return None
     return None if best.nob_adjusted_scaling_damage() == challenger.nob_adjusted_scaling_damage() \
         else challenger.nob_adjusted_scaling_damage() < best.nob_adjusted_scaling_damage()
 

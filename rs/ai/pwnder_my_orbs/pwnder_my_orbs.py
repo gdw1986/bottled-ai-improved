@@ -1,6 +1,6 @@
 from typing import List
 
-from rs.ai.pwnder_my_orbs.config import CARD_REMOVAL_PRIORITY_LIST, HIGH_PRIORITY_UPGRADES, DESIRED_POTIONS
+from rs.ai.pwnder_my_orbs.config import CARD_REMOVAL_PRIORITY_LIST, HIGH_PRIORITY_UPGRADES, DESIRED_POTIONS, DESIRED_CARDS_FOR_DECK
 from rs.ai.pwnder_my_orbs.handlers.battle_handler import get_pmo_battle_handler
 from rs.ai.pwnder_my_orbs.handlers.boss_relic_handler import BossRelicHandler
 from rs.ai.pwnder_my_orbs.handlers.card_reward_handler import CardRewardHandler
@@ -43,7 +43,7 @@ PWNDER_MY_ORBS: AiStrategy = AiStrategy(
         CommonCombatRewardHandler(desired_potions=DESIRED_POTIONS),
         CardRewardHandler(),
         CommonNeowHandler(),
-        EventHandler(removal_priority_list=CARD_REMOVAL_PRIORITY_LIST, cards_desired_for_deck=[]),
+        EventHandler(removal_priority_list=CARD_REMOVAL_PRIORITY_LIST, cards_desired_for_deck=DESIRED_CARDS_FOR_DECK),
         CommonChestHandler(),
         CommonMapHandler(),
         CommonCampfireHandler(HIGH_PRIORITY_UPGRADES, CARD_REMOVAL_PRIORITY_LIST),

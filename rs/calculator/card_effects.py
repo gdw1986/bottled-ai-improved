@@ -94,6 +94,9 @@ def get_card_effects(card: CardInterface, player: PlayerInterface, draw_pile: Li
     if card.id == CardId.IRON_WAVE:
         amount = 5 if not card.upgrade else 7
         return [CardEffects(damage=amount, hits=1, block=amount, target=TargetType.MONSTER)]
+    if card.id == CardId.HEADBUTT:
+        return [CardEffects(damage=9 if not card.upgrade else 14, hits=1, target=TargetType.MONSTER)]
+
     if card.id == CardId.PERFECTED_STRIKE:
         strike_amount = len([1 for c in discard_pile + draw_pile + hand if "strike" in c.id.value])
         damage = 6 + strike_amount * (2 if not card.upgrade else 3)
@@ -123,7 +126,7 @@ def get_card_effects(card: CardInterface, player: PlayerInterface, draw_pile: Li
         return [CardEffects(damage=13, hits=1, target=TargetType.MONSTER, applies_powers=powers)]
     if card.id == CardId.DISARM:
         return [CardEffects(target=TargetType.MONSTER,
-                            applies_powers={PowerId.STRENGTH: -2 if not card.upgrade else 3})]
+                            applies_powers={PowerId.STRENGTH: -2 if not card.upgrade else -3})]
     if card.id == CardId.DROPKICK:
         return [CardEffects(damage=5 if not card.upgrade else 8, hits=1, target=TargetType.MONSTER,
                             post_hooks=[dropkick_post_hook])]

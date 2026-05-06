@@ -169,6 +169,7 @@ class CardId(Enum):
     HAND_OF_GREED = 'handofgreed'  # Weird id alert!
     HEATSINKS = 'heatsinks'
     HEAVY_BLADE = 'heavy blade'
+    HEADBUTT = 'headbutt'
     HEEL_HOOK = 'heel hook'
     HEMOKINESIS = 'hemokinesis'
     HELLO_WORLD = 'hello world'
