@@ -1,7 +1,7 @@
 # bottled-ai-improved 优化日志
 
-> **最后更新**: 2026-05-06 08:20
-> **已修改文件**: 8 个 (+73/-17 行，不含 main.py)
+> **最后更新**: 2026-05-06 09:20
+> **已修改文件**: 10 个 (+100/-20 行，不含 main.py)
 > **AI 接手即读**：本文件包含项目全貌、已完成改动、待办计划，可直接继续工作。
 
 ---
@@ -241,6 +241,32 @@ Group 3 (Atk):  sunder, streamline, ftl, sweeping beam, bullseye, compile driver
 Group 4 (Frost): glacier, coolheaded, chill
 Group 5 (Def):  charge battery, autoshields, equilibrium, reinforced body
 ```
+
+#### 5. Disarm 不出牌 — 比较器链缺失敌人力量削减评估（2026-05-06 补丁）
+
+**现象**：AI 即使有剩余能量也不出 Disarm 而是直接结束回合。
+
+**根因**：比较器链中 `lowest_health_monster`（第14位）在 `least_incoming_damage`（第20位）之前。
+Disarm 不造成伤害 → 怪物血量更高 → 在"最低血量怪物"比较中输给出攻击牌的路径 → 永远走不到评估受伤减少的比较器。
+
+**示例**：
+```
+路径A (Strike+Defend): 怪物 24HP STR=0, 玩家受7伤
+路径B (Disarm+Defend): 怪物 30HP STR=-2, 玩家受5伤
+→ 第14步 lowest_health_monster: 24 < 30 → 选A，Disarm被淘汰
+→ 第20步 least_incoming_damage 永远执行不到（5 < 7 应选B）
+```
+
+**修复**：新增 `most_enemy_strength_reduction` 比较器（comparisons.py），插入在
+`lowest_total_monster_health` 之后、`most_enemy_vulnerable` 之前（约第16位）。
+
+- 计算所有存活怪物的力量变化量（`current_str - original_str`）
+- 乘以估算剩余回合数（基于怪物 HP 比例），体现跨回合减伤价值
+- 负值越大（削减越多）→ 路径越优
+- 不影响已有行为：如果两个路径敌人力量没变化，返回 None，交给后续比较器
+
+**影响范围**：Ironclad（Disarm、Piercing Wail）、Silent（Piercing Wail）等力量削减卡牌。
+Defect/Watcher 当前无此类卡牌，不受影响。
 
 ---
 

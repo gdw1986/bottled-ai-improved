@@ -41,6 +41,7 @@ from rs.common.comparators.core.comparisons import (
     avoid_inconvenient_time_warp, stance_is_calm, stance_is_not_wrath,
     no_blasphemy,
     least_nob_adjusted_scaling_damage,
+    most_enemy_strength_reduction,
     most_tranquility,
     most_block_saved_for_next_turn,
     lowest_health_edge_monster,
@@ -254,6 +255,11 @@ ironclad_comparisons: List[Comparison] = [
     most_dead_monsters,
     lowest_health_monster,
     lowest_total_monster_health,
+
+    # 5.5. Enemy strength reduction — value Disarm / Piercing Wail / etc.
+    # Must come after kill/blood metrics but before status effects,
+    # otherwise "strike for 6" always beats "disarm for -2 STR"
+    most_enemy_strength_reduction,
 
     # 6. Status effects on enemies
     most_enemy_vulnerable,

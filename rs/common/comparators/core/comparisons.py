@@ -181,6 +181,45 @@ def least_enemy_artifacts(best: CA, challenger: CA) -> Optional[bool]:
         else challenger.enemy_artifacts() < best.enemy_artifacts()
 
 
+def most_enemy_strength_reduction(best: CA, challenger: CA) -> Optional[bool]:
+    """Prefer paths that reduce enemy strength more.
+
+    Cards like Disarm (-2/-3 STR) and Piercing Wail (-6/-8 STR) don't deal
+    damage, so they always lose in lowest_health_monster and
+    lowest_total_monster_health comparisons.  But reducing enemy strength
+    directly reduces incoming damage both this turn *and* future turns.
+
+    We compute total enemy strength delta from the original state (not
+    absolute value) so that the comparator only fires when one path actually
+    reduced enemy strength more than another.
+
+    Multi-turn value heuristic: each point of strength reduction is amplified
+    by estimated remaining turns (≈ turns remaining), because -2 STR saves
+    2 HP per turn for the rest of the fight.  We approximate this with a
+    simple multiplier based on remaining enemy HP percentage.
+    """
+    def strength_reduction(assessment: CA) -> int:
+        total = 0
+        for i, m in enumerate(assessment.state.monsters):
+            if m.current_hp <= 0:
+                continue
+            original_str = assessment.original.monsters[i].powers.get(PowerId.STRENGTH, 0)
+            current_str = m.powers.get(PowerId.STRENGTH, 0)
+            delta = current_str - original_str  # negative = strength was reduced
+            if delta < 0:
+                # Amplify by estimated remaining turns: if monster is at 50% HP,
+                # expect ~2 more turns; at 80% HP, expect ~3 more turns.
+                hp_ratio = m.current_hp / max(m.max_hp, 1)
+                turns_est = max(1, int(hp_ratio * 4))
+                total += delta * turns_est
+        return total
+
+    best_red = strength_reduction(best)
+    chal_red = strength_reduction(challenger)
+    # More negative = more reduction = better
+    return None if best_red == chal_red else chal_red < best_red
+
+
 def least_nob_adjusted_scaling_damage(best: CA, challenger: CA) -> Optional[bool]:
     # Only apply when Gremlin Nob is present; without Nob, this metric
     # degrades to "least HP lost" which preempts damage comparisons

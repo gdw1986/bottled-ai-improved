@@ -7,6 +7,10 @@ from rs.ai.requested_strike.ironclad_comparator import (
     prefers_armaments_played,
     prefers_block_under_threat,
     prefers_strength_gain,
+    most_enemy_strength_reduction,
+    lowest_health_monster,
+    lowest_total_monster_health,
+    most_enemy_vulnerable,
 )
 from rs.ai.requested_strike.handlers.battle_handler import IroncladBattleHandler
 
@@ -36,6 +40,19 @@ class RequestedStrikeBattleHandlerTestCase(RsTestHandlerFixture):
         armaments_index = ironclad_comparisons.index(prefers_armaments_played)
 
         self.assertLess(armaments_index, ironclad_comparisons.index(prefers_strength_gain))
+
+    def test_enemy_strength_reduction_is_after_damage_metrics_but_before_vulnerable(self):
+        """Verify most_enemy_strength_reduction is positioned after lowest_total_monster_health
+        but before most_enemy_vulnerable. This ensures Disarm is valued after kill metrics
+        but before generic status effects."""
+        str_red_idx = ironclad_comparisons.index(most_enemy_strength_reduction)
+        total_hp_idx = ironclad_comparisons.index(lowest_total_monster_health)
+        vuln_idx = ironclad_comparisons.index(most_enemy_vulnerable)
+
+        self.assertLess(total_hp_idx, str_red_idx,
+                        "strength_reduction should come after total_monster_health")
+        self.assertLess(str_red_idx, vuln_idx,
+                        "strength_reduction should come before enemy_vulnerable")
 
 
 if __name__ == '__main__':
