@@ -36,6 +36,8 @@ class CommonPurgeHandler(Handler):
         choices = []
 
         # First Curses (use card.id - always English, strip color suffix)
+        # Fix: skip indices already in choices to avoid duplicates when
+        # multiple curses share the same base_id in choice_list.
         suffixes = ('_r', '_g', '_b', '_p')
         for card in state.deck.cards:
             if card.type == CardType.CURSE:
@@ -45,12 +47,14 @@ class CommonPurgeHandler(Handler):
                         base_id = base_id[: -len(s)]
                         break
                 if base_id in choice_list:
-                    choices.append(choice_list.index(base_id))
+                    idx = choice_list.index(base_id)
+                    if idx not in choices:
+                        choices.append(idx)
 
         # Then the rest (choice_list is already translated to English by name_map)
         for pref in self.preferences:
             for i in range(len(choice_list)):
-                if pref == choice_list[i]:
+                if pref == choice_list[i] and i not in choices:
                     choices.append(i)
 
         for i in range(len(choice_list)):

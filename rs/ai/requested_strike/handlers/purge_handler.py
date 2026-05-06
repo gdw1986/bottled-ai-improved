@@ -80,6 +80,10 @@ class PurgeHandler(Handler):
         
         This avoids the name-matching-through-translation issue that
         caused desirable cards like Feel No Pain to be selected early.
+        
+        Bug fix: each deck card must map to a UNIQUE choice_list index.
+        Previously, 3 Strike_R cards all mapped to index 0, causing
+        choices[:2] = [0, 0] → choose 0 selects then deselects → infinite loop.
         """
         choice_list = state.get_choice_list()
         deck_cards = state.deck.cards
@@ -87,13 +91,16 @@ class PurgeHandler(Handler):
         # Phase 1: rank every card in deck by removal priority
         # Lower score = remove first
         ranked: List[tuple[int, int]] = []  # (score, choice_list_index)
+        used_indices: set[int] = set()       # track which indices are already assigned
 
         for card in deck_cards:
             card_id = card.id.lower()
-            # Find this card in choice_list
-            card_index = self._find_in_choice_list(card_id, choice_list)
+            # Find this card in choice_list, skipping already-used indices
+            card_index = self._find_in_choice_list(card_id, choice_list, exclude=used_indices)
             if card_index is None:
                 continue
+
+            used_indices.add(card_index)
 
             # Score: 0 = remove first, 100 = keep, 50 = neutral
             score = self._score_card(card_id, card)
@@ -138,19 +145,36 @@ class PurgeHandler(Handler):
         return 50
 
     @classmethod
-    def _find_in_choice_list(cls, card_id: str, choice_list: List[str]) -> int | None:
-        """Find a card in choice_list by its id. Handles translated names."""
+    def _find_in_choice_list(cls, card_id: str, choice_list: List[str],
+                             exclude: set[int] | None = None) -> int | None:
+        """Find a card in choice_list by its id. Handles translated names.
+        
+        Args:
+            card_id: English card ID (e.g. 'strike_r')
+            choice_list: list of card names (English after get_choice_list() mapping)
+            exclude: set of indices to skip (already assigned to another deck card)
+        
+        When multiple deck cards share the same name (e.g. 3x Strike_R),
+        without exclude they'd all map to the same choice_list index,
+        causing choose N to toggle select/deselect instead of picking distinct cards.
+        """
+        if exclude is None:
+            exclude = set()
         card_key = cls._normalize_name(card_id)
         base_id = cls._base_card_key(card_id)
 
         # Try exact match first
         for i, name in enumerate(choice_list):
+            if i in exclude:
+                continue
             name_key = cls._normalize_name(name)
             if name_key == base_id or name_key == card_key:
                 return i
 
         # Try partial match (card_id as substring of choice_list name)
         for i, name in enumerate(choice_list):
+            if i in exclude:
+                continue
             if base_id in cls._normalize_name(name):
                 return i
 
