@@ -48,6 +48,7 @@ from rs.common.comparators.core.comparisons import (
     most_energy,
     CA,
 )
+from rs.common.comparators.core.assessment import ComparatorAssessment as BaseCA
 
 # ---------------------------------------------------------------------------
 # Ironclad-specific power lists
@@ -220,6 +221,50 @@ def prefers_strength_gain(best: CA, challenger: CA) -> Optional[bool]:
     return None
 
 
+def least_hp_loss_non_nob(best: CA, challenger: CA) -> Optional[bool]:
+    """HP-loss safety net for non-Nob fights.
+
+    Previously, least_nob_adjusted_scaling_damage accidentally served as a
+    "least HP loss" comparator in ALL fights (not just Nob), because
+    __nob_adjusted_incoming_damage() computed original_hp - current_hp when
+    no Nob was present.  This provided an implicit safety net that prevented
+    the AI from taking too much damage.
+
+    After the Nob guard was added (returning None when no Nob), this safety
+    net disappeared, making the AI too aggressive in non-Nob fights — it
+    would take 15 damage to deal 6 more damage to a monster, even when the
+    trade was clearly unfavorable.
+
+    This comparator restores a *weighted* version of that safety net:
+    - Only fires in non-Nob fights
+    - Only fires when one path loses significantly more HP than the other
+      (threshold: 8+ HP difference). This still allows favorable trades
+      (taking 5 damage to deal 18 with Perfected Strike) but blocks
+      clearly unfavorable ones (taking 15 damage to deal 6).
+    - Does NOT fire when both paths have equal HP loss (avoids blocking
+      other comparators unnecessarily)
+    """
+    # Skip if Gremlin Nob is present (Nob fight handled by least_nob_adjusted_scaling_damage)
+    has_nob = any(m.powers.get(PowerId.ANGER_NOB, 0) for m in best.state.monsters)
+    if has_nob:
+        return None
+
+    best_hp_loss = best.original.player.current_hp - best.state.player.current_hp
+    chal_hp_loss = challenger.original.player.current_hp - challenger.state.player.current_hp
+
+    if best_hp_loss == chal_hp_loss:
+        return None
+
+    # Only intervene when the HP difference is significant (>=8 HP)
+    # This allows small favorable trades but prevents catastrophic HP loss
+    hp_diff = abs(best_hp_loss - chal_hp_loss)
+    if hp_diff < 8:
+        return None
+
+    # Prefer the path that loses less HP
+    return chal_hp_loss < best_hp_loss
+
+
 # ---------------------------------------------------------------------------
 # Ironclad comparison chain
 # ---------------------------------------------------------------------------
@@ -233,6 +278,12 @@ ironclad_comparisons: List[Comparison] = [
 
     # 2. Gremlin Nob: account for future damage from skills increasing Enrage strength
     least_nob_adjusted_scaling_damage,
+
+    # 2.5. Non-Nob HP-loss safety net: prevent clearly unfavorable damage trades.
+    # Restores the implicit "least HP loss" that least_nob_adjusted_scaling_damage
+    # accidentally provided before the Nob guard was added, but with a threshold
+    # (8+ HP difference) so small favorable trades are still allowed.
+    least_hp_loss_non_nob,
 
     # 3. Threat assessment
     prefers_block_under_threat,            # High threat → more block

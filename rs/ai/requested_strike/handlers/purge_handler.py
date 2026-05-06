@@ -10,6 +10,7 @@ Removal order:
   4. Everything else — desirable cards (Feel No Pain, etc.) come LAST
 """
 
+import re
 from typing import List
 
 from presentation_config import presentation_mode, p_delay
@@ -187,6 +188,11 @@ class PurgeHandler(Handler):
     @classmethod
     def _base_card_key(cls, name: str) -> str:
         base = name.lower()
+        # Strip upgrade suffix first (+1, +2, etc.) so that upgraded cards
+        # match their base form in keeper/removal lists.
+        # Without this, "LimitBreak+1" never matches keeper "limit break",
+        # causing upgraded keepers to score 50 (neutral) and get purged.
+        base = re.sub(r'\+\d+$', '', base)
         for suffix in ('_r', '_g', '_b', '_p'):
             if base.endswith(suffix):
                 base = base[: -len(suffix)]
