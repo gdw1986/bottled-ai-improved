@@ -94,6 +94,14 @@ class CalculatorTestFixture(unittest.TestCase):
     def see_player_has_block(self, play: PlayPath, amount: int):
         self.assertEqual(amount, play.state.player.block)
 
+    def see_player_saved_block_for_next_turn(self, play: PlayPath, amount: int):
+        """Check block that will carry over to next turn (post end_turn block clearing).
+
+        After end_turn(), player.block is cleared unless Barricade/Blur preserves it.
+        saved_block_for_next_turn records how much block would persist into the next turn.
+        """
+        self.assertEqual(amount, play.state.saved_block_for_next_turn)
+
     def see_player_has_power(self, play: PlayPath, power_id: PowerId, amount: int):
         self.assertEqual(amount, play.state.player.powers.get(power_id, 0))
 

@@ -139,7 +139,7 @@ class CalculatorRelicsTest(CalculatorTestFixture):
         state = self.given_state(CardId.STRIKE_R, relics={RelicId.ORICHALCUM: 1})
         play = self.when_playing_the_first_card(state)
         play.state.end_turn()
-        self.see_player_has_block(play, 6)
+        self.see_player_saved_block_for_next_turn(play, 6)
 
     def test_orichalcum_does_not_give_block_when_player_has_some(self):
         state = self.given_state(CardId.STRIKE_R)
@@ -147,7 +147,7 @@ class CalculatorRelicsTest(CalculatorTestFixture):
         state.relics[RelicId.ORICHALCUM] = 1
         play = self.when_playing_the_first_card(state)
         play.state.end_turn()
-        self.see_player_has_block(play, 1)
+        self.see_player_saved_block_for_next_turn(play, 1)
 
     def test_odd_mushroom_reduces_incoming_damage(self):
         state = self.given_state(CardId.STRIKE_R, player_powers={PowerId.VULNERABLE: 1},
@@ -578,7 +578,7 @@ class CalculatorRelicsTest(CalculatorTestFixture):
         state.player.energy = 1
         play = self.when_playing_the_first_card(state)
         state.end_turn()
-        self.see_player_has_block(play, 5)
+        self.see_player_saved_block_for_next_turn(play, 5)
 
     def test_frozen_core(self):
         state = self.given_state(CardId.WOUND, relics={RelicId.FROZEN_CORE: 1}, orb_slots=2,
@@ -766,7 +766,7 @@ class CalculatorRelicsTest(CalculatorTestFixture):
         state.player.block = 20
         play = self.when_playing_the_first_card(state)
         play.end_turn()
-        self.see_player_has_block(play, 20)
+        self.see_player_has_block(play, 5)
         self.assertEqual(5, play.state.saved_block_for_next_turn)
 
     def test_calipers_does_not_save_less_than_15_block_for_next_turn(self):
@@ -774,7 +774,7 @@ class CalculatorRelicsTest(CalculatorTestFixture):
         state.player.block = 3
         play = self.when_playing_the_first_card(state)
         play.end_turn()
-        self.see_player_has_block(play, 3)
+        self.see_player_has_block(play, 0)
         self.assertEqual(0, play.state.saved_block_for_next_turn)
 
     def test_duality(self):

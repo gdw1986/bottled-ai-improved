@@ -23,13 +23,13 @@ class CalculatorOrbsTest(CalculatorTestFixture):
         state = self.given_state(CardId.WOUND, orbs=[(OrbId.FROST, 1)], orb_slots=3)
         play = self.when_playing_the_first_card(state)
         play.end_turn()
-        self.see_player_has_block(play, 2)
+        self.see_player_saved_block_for_next_turn(play, 2)
 
     def test_frost_orb_triggers_with_focus(self):
         state = self.given_state(CardId.WOUND, player_powers={PowerId.FOCUS: 3}, orbs=[(OrbId.FROST, 1)], orb_slots=3)
         play = self.when_playing_the_first_card(state)
         play.end_turn()
-        self.see_player_has_block(play, 5)
+        self.see_player_saved_block_for_next_turn(play, 5)
 
     def test_dark_orb_triggers_on_end_turn(self):
         state = self.given_state(CardId.WOUND, orbs=[(OrbId.DARK, 6)], orb_slots=3)

@@ -96,6 +96,13 @@ def get_card_effects(card: CardInterface, player: PlayerInterface, draw_pile: Li
         return [CardEffects(damage=amount, hits=1, block=amount, target=TargetType.MONSTER)]
     if card.id == CardId.HEADBUTT:
         return [CardEffects(damage=9 if not card.upgrade else 14, hits=1, target=TargetType.MONSTER)]
+    if card.id == CardId.WARCRY:
+        # Warcry: draw 1 (2 if upgraded), exhaust. Top-deck manipulation not simulated.
+        return [CardEffects(target=TargetType.SELF, draw=1 if not card.upgrade else 2)]
+    if card.id == CardId.MADNESS:
+        # Madness: random card in hand costs 0. Cannot simulate specific card reduction;
+        # approximate as energy_gain=2 (average savings from reducing a card to 0).
+        return [CardEffects(target=TargetType.SELF, energy_gain=2)]
 
     if card.id == CardId.PERFECTED_STRIKE:
         strike_amount = len([1 for c in discard_pile + draw_pile + hand if "strike" in c.id.value])

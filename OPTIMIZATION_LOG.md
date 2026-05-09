@@ -89,6 +89,46 @@ a15_wins = [r['event'] for r in data if r['event'].get('ascension_level',0)>=15 
 
 ## 四、优化历史
 
+### P0.8 (2026-05-09) — Boss 宝箱房死循环修复
+**问题**: AI 在 Boss 宝箱房过渡状态（`screen_type=MAP, room_type=TreasureRoomBoss, next_nodes=[]`）匹配到 `DefaultWaitHandler`，发出 `wait 30` 后游戏状态不变，形成死循环。
+
+**根因**: `CommonChestHandler.can_handle()` 只检查 `room_type == "TreasureRoom"`，漏掉了 `TreasureRoomBoss`。该状态下 `available_commands` 不含 `choose`/`confirm`/`proceed`，只有 `["potion", "return", "key", "click", "wait", "state"]`，导致没有任何 handler 匹配，落到 `DefaultWaitHandler`。
+
+**修改文件**: `rs/common/handlers/common_chest_handler.py`
+```python
+chest_room_types = ("TreasureRoom", "TreasureRoomBoss")  # 新增 TreasureRoomBoss
+...
+and state.game_state()['room_type'] in chest_room_types
+```
+
+**影响范围**: 所有 AI 策略均使用 `CommonChestHandler`（REQUESTED_STRIKE, CLAW_IS_LAW, PEACEFUL_PUMMELING, PWNDER_MY_ORBS, SHIVS_AND_GIGGLES, example）。
+
+**验证**: ✅ 导入测试通过，策略加载正常
+
+### P0.9 (2026-05-07) — Limit Break 有剩余能量时不打出修复
+**问题**: AI 在战斗中即使有剩余能量也不打 Limit Break（力量翻倍卡），而是直接结束回合。
+
+**根因**: `prefers_block_under_threat` 位于比较器链第 7 位，`prefers_strength_gain` 位于第 12 位。当两条路径的 threat 都 >10 且 block 不同时，`prefers_block_under_threat` 总是选 block 更多的路径，即使另一条路径力量翻倍。这导致 AI 选 Defend 而非 Limit Break。
+
+**修复**: 在 `prefers_block_under_threat` 中增加力量增长豁免——当 challenger 路径力量增长更多且两条路径都能存活时，返回 `None` 让位给 `prefers_strength_gain`。
+
+```python
+if chal_str_gain > best_str_gain:
+    best_survives = best.state.player.current_hp > best_threat
+    chal_survives = challenger.state.player.current_hp > chal_threat
+    if best_survives and chal_survives:
+        return None  # Defer to prefers_strength_gain
+```
+
+**安全兜底**: 如果力量路径会死（chal_survives=False），格挡偏好仍然生效。
+
+### P1.2 (2026-05-07) — PurgeHandler 重复索引死循环修复
+**问题**: Empty Cage 等多选 purge（purge 2 张卡）时，3x 同名 Strike_R 全部映射到 choice_list 中第一个索引 0，导致 `choose 0` 选中再取消，无限循环。
+
+**根因**: `_find_in_choice_list()` 总是返回第一个匹配项，不追踪已分配的索引。
+
+**修复**: `_find_in_choice_list` 增加 `exclude: set[int]` 参数，已分配的索引被跳过，确保每张同名卡牌映射到不同的 choice 索引。
+
 ### 早期 (已有 commit)
 
 | Commit | 内容 |

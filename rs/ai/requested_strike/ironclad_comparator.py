@@ -80,12 +80,28 @@ def raw_incoming_damage(state: BattleState) -> int:
 
 
 def prefers_block_under_threat(best: CA, challenger: CA) -> Optional[bool]:
-    """When incoming damage exceeds block significantly, prioritize more block."""
+    """When incoming damage exceeds block significantly, prioritize more block.
+
+    Exception: when one path gains more strength AND both paths survive,
+    defer to prefers_strength_gain instead of forcing block preference.
+    This prevents the AI from choosing Defend over Limit Break when the
+    strength gain (which benefits all future attacks) outweighs the HP cost.
+    """
     best_threat = raw_incoming_damage(best.state) - best.state.player.block
     chal_threat = raw_incoming_damage(challenger.state) - challenger.state.player.block
     # Only trigger if both are facing significant threat (>10 net incoming)
     if best_threat > 10 and chal_threat > 10:
         if best.state.player.block != challenger.state.player.block:
+            # Strength-gain exception: if the challenger gains more strength
+            # and both paths survive, let prefers_strength_gain decide instead.
+            original_str = challenger.original.player.powers.get(PowerId.STRENGTH, 0)
+            best_str_gain = best.state.player.powers.get(PowerId.STRENGTH, 0) - original_str
+            chal_str_gain = challenger.state.player.powers.get(PowerId.STRENGTH, 0) - original_str
+            if chal_str_gain > best_str_gain:
+                best_survives = best.state.player.current_hp > best_threat
+                chal_survives = challenger.state.player.current_hp > chal_threat
+                if best_survives and chal_survives:
+                    return None  # Defer to prefers_strength_gain
             return challenger.state.player.block > best.state.player.block
     return None
 
@@ -197,6 +213,7 @@ def prefers_strength_gain(best: CA, challenger: CA) -> Optional[bool]:
         CardId.FLEX,
         CardId.LIMIT_BREAK,
         CardId.DEMON_FORM,
+        CardId.JAX,           # 0-cost: -3 HP, +2 STR (+3 if upgraded)
     }
 
     original = challenger.original

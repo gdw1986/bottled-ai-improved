@@ -110,6 +110,7 @@ DESIRED_CARDS_FOR_DECK: dict[str, int] = {
     'clash': 2,              # 13% → 26%
 
     # Colorless / Shop (high base wr, pick opportunistically)
+    'j.a.x.': 1,            # 0-cost +2 STR (self-damage 3; +3 STR upgraded)
     'master of strategy': 1, # 36% base
     'dark shackles': 1,      # 33% base
     'flash of steel': 1,     # 29% base

@@ -54,18 +54,18 @@ ATTACK = {_normalize_card_name(c) for c in {'Strike_R','Bash','Anger','Body Slam
     'Feed','Havoc','Bludgeon','RecklessCharge'}}
 BLOCK = {_normalize_card_name(c) for c in {'Defend_R','Armaments','Ghostly Armor','Impervious','Iron Wave',
     'Power Through','Second Wind','Shrug It Off','True Grit','Flame Barrier',
-    'Sentinel','Entrench'}}
+    'Sentinel','Entrench','Barricade','Body Slam'}}
 DRAW = {_normalize_card_name(c) for c in {'Battle Trance','Burning Pact','Offering','Pommel Strike','Warcry',
     'Dark Embrace','Evolve','Shrug It Off'}}
 SCALE = {_normalize_card_name(c) for c in {'Spot Weakness','Inflame','Demon Form','Limit Break','Barricade',
     'Corruption','Feel No Pain','Rupture','Brutality','Combust',
-    'Juggernaut','Metallicize','Rage','Dark Embrace'}}
+    'Juggernaut','Metallicize','Rage','Dark Embrace','J.A.X.','Entrench','Body Slam'}}
 AOE = {_normalize_card_name(c) for c in {'Cleave','Whirlwind','Immolate','Thunderclap'}}
 WEAK = {_normalize_card_name(c) for c in {'Clothesline','Shockwave','Uppercut','Disarm'}}
 VULN = {_normalize_card_name(c) for c in {'Bash','Shockwave','Uppercut','Thunderclap'}}
 ENERGY = {_normalize_card_name(c) for c in {'Offering','Seeing Red','Bloodletting','Berserk'}}
 
-STRENGTH_SOURCES = {_normalize_card_name(c) for c in {'Inflame', 'Spot Weakness', 'Demon Form', 'Flex'}}
+STRENGTH_SOURCES = {_normalize_card_name(c) for c in {'Inflame', 'Spot Weakness', 'Demon Form', 'Flex', 'J.A.X.'}}
 STRENGTH_MULTIPLIERS = {_normalize_card_name(c) for c in {'Limit Break'}}
 STRENGTH_PAYOFFS = {_normalize_card_name(c) for c in {
     'Heavy Blade', 'Sword Boomerang', 'Pummel', 'Whirlwind', 'Reaper',

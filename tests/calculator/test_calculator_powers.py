@@ -190,7 +190,7 @@ class CalculatorPowersTest(CalculatorTestFixture):
         state = self.given_state(CardId.STRIKE_R, player_powers={PowerId.PLATED_ARMOR: 4})
         play = self.when_playing_the_first_card(state)
         play.end_turn()
-        self.see_player_has_block(play, 4)
+        self.see_player_saved_block_for_next_turn(play, 4)
 
     def test_plated_armor_gets_reduced_by_attack_damage(self):
         state = self.given_state(CardId.STRIKE_R, player_powers={PowerId.PLATED_ARMOR: 4})
@@ -253,14 +253,14 @@ class CalculatorPowersTest(CalculatorTestFixture):
         state = self.given_state(CardId.STRIKE_R, player_powers={PowerId.METALLICIZE: 3})
         play = self.when_playing_the_first_card(state)
         play.state.end_turn()
-        self.see_player_has_block(play, 3)
+        self.see_player_saved_block_for_next_turn(play, 3)
 
     def test_metallicize_adds_block_stacking_with_orichalcum(self):
         state = self.given_state(CardId.STRIKE_R, player_powers={PowerId.METALLICIZE: 3},
                                  relics={RelicId.ORICHALCUM: 1})
         play = self.when_playing_the_first_card(state)
         play.state.end_turn()
-        self.see_player_has_block(play, 9)
+        self.see_player_saved_block_for_next_turn(play, 9)
 
     def test_intangible_player_blocks_all_but_one_damage(self):
         state = self.given_state(CardId.STRIKE_R, targets=2, player_powers={PowerId.INTANGIBLE_PLAYER: 1})
@@ -1221,7 +1221,7 @@ class CalculatorPowersTest(CalculatorTestFixture):
         play = self.when_playing_the_whole_hand(state)
         play.end_turn()
         self.see_player_exhaust_count(play, 1)
-        self.see_player_has_block(play, 6)
+        self.see_player_saved_block_for_next_turn(play, 6)
 
     def test_feel_no_pain_multiple(self):
         state = self.given_state(CardId.VOID, player_powers={PowerId.FEEL_NO_PAIN: 6})
@@ -1229,7 +1229,7 @@ class CalculatorPowersTest(CalculatorTestFixture):
         play = self.when_playing_the_whole_hand(state)
         play.end_turn()
         self.see_player_exhaust_count(play, 2)
-        self.see_player_has_block(play, 12)
+        self.see_player_saved_block_for_next_turn(play, 12)
 
     def test_dark_embrace(self):
         state = self.given_state(CardId.IMPERVIOUS, player_powers={PowerId.DARK_EMBRACE: 1})
@@ -1298,7 +1298,7 @@ class CalculatorPowersTest(CalculatorTestFixture):
         state = self.given_state(CardId.DEFEND_R, player_powers={PowerId.WAVE_OF_THE_HAND: 3}, targets=2)
         play = self.when_playing_the_first_card(state)
         play.end_turn()
-        self.see_player_has_block(play, 5)
+        self.see_player_saved_block_for_next_turn(play, 5)
         self.see_enemy_has_power(play, PowerId.WEAKENED, 3, enemy_index=0)
         self.see_enemy_has_power(play, PowerId.WEAKENED, 3, enemy_index=1)
         self.see_player_has_power(play, PowerId.WAVE_OF_THE_HAND, 0)

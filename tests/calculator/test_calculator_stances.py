@@ -65,7 +65,7 @@ class CalculatorStancesTest(CalculatorTestFixture):
         play = self.when_playing_the_whole_hand(state)
         play.end_turn()
         self.see_stance(play, StanceType.CALM)
-        self.see_player_has_block(play, 3)
+        self.see_player_saved_block_for_next_turn(play, 3)
 
     def test_like_water_does_not_block_outside_calm(self):
         state = self.given_state(CardId.WOUND, player_powers={PowerId.LIKE_WATER: 2})

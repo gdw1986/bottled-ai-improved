@@ -697,14 +697,23 @@ class BattleState(BattleStateInterface):
                 if monster.powers[PowerId.FADING] < 1:
                     monster.inflict_damage(monster, 9999, 1, blockable=False, vulnerable_modifier=1, is_attack=False)
 
-        # potentially save some block for next turn
+        # Save block for next turn and clear it (matching real game behavior).
+        # Previously block was never cleared, making Barricade/Blur appear useless
+        # since all paths implicitly preserved block across turns.
         if self.player.block > 0:
             if self.player.powers.get(PowerId.BARRICADE, 0):
                 self.saved_block_for_next_turn = self.player.block
+                # Barricade: block persists — do NOT clear
             elif self.player.powers.get(PowerId.BLUR, 0):
                 self.saved_block_for_next_turn = self.player.block
+                # Blur: block persists for this turn — do NOT clear
             elif RelicId.CALIPERS in self.relics:
                 self.saved_block_for_next_turn = max(self.player.block - 15, 0)
+                self.player.block = max(self.player.block - 15, 0)
+            else:
+                # No preservation: record block then clear it
+                self.saved_block_for_next_turn = self.player.block
+                self.player.block = 0
 
         # leaving divinity happens at start of turn but this way avoids issues since we don't have a clean 'turn start'
         if self.get_stance() == StanceType.DIVINITY:

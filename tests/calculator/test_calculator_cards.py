@@ -3028,7 +3028,7 @@ class CalculatorCardsTest(CalculatorTestFixture):
         state.hand.append(get_card(CardId.PERSEVERANCE))
         play = self.when_playing_the_first_card(state)
         play.state.end_turn()
-        self.see_player_has_block(play, 5)
+        self.see_player_saved_block_for_next_turn(play, 5)
         self.see_player_spent_energy(play, 1)
         self.see_player_discard_pile_count(play, 1)
         self.see_player_hand_count(play, 1)
