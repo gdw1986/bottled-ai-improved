@@ -22,32 +22,32 @@ def _card(card_id: str, card_type: str = "ATTACK"):
 
 class RequestedStrikeShopPurchaseHandlerTestCase(unittest.TestCase):
 
-    def test_buys_apotheosis_before_ordinary_purge(self):
+    def test_buys_perfected_strike_before_ordinary_purge(self):
         state = self._shop_state(
             gold=188,
-            choice_list=["purge", "Apotheosis"],
-            cards=[{"id": "Apotheosis", "name": "Apotheosis", "price": 180}],
+            choice_list=["purge", "Perfected Strike"],
+            cards=[{"id": "Perfected Strike", "name": "Perfected Strike", "price": 49}],
             deck=[_card("Strike_R")],
         )
 
         self.assertEqual(["choose 1", "wait 30"], ShopPurchaseHandler().handle(state).commands)
 
-    def test_purges_removable_curse_before_apotheosis(self):
+    def test_purges_removable_curse_before_perfected_strike(self):
         state = self._shop_state(
             gold=188,
-            choice_list=["purge", "Apotheosis"],
-            cards=[{"id": "Apotheosis", "name": "Apotheosis", "price": 180}],
+            choice_list=["purge", "Perfected Strike"],
+            cards=[{"id": "Perfected Strike", "name": "Perfected Strike", "price": 49}],
             deck=[_card("Doubt", "CURSE")],
         )
 
         self.assertEqual(["choose 0", "wait 30"], ShopPurchaseHandler().handle(state).commands)
 
-    def test_purges_removable_curse_even_with_low_gold(self):
+    def test_keeps_release_03_ordinary_purge_before_non_baseline_card_buy(self):
         state = self._shop_state(
-            gold=75,
-            choice_list=["purge"],
-            cards=[],
-            deck=[_card("Doubt", "CURSE")],
+            gold=188,
+            choice_list=["purge", "Apotheosis"],
+            cards=[{"id": "Apotheosis", "name": "Apotheosis", "price": 180}],
+            deck=[_card("Strike_R")],
         )
 
         self.assertEqual(["choose 0", "wait 30"], ShopPurchaseHandler().handle(state).commands)

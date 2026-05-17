@@ -1,8 +1,8 @@
 # bottled-ai-improved 优化日志
 
-> **最后更新**: 2026-05-06 09:20
-> **已修改文件**: 10 个 (+100/-20 行，不含 main.py)
-> **AI 接手即读**：本文件包含项目全貌、已完成改动、待办计划，可直接继续工作。
+> **最后更新**: 2026-05-17
+> **状态**: 已归档。`codex/baseline-recovery` 已撤回 RequestedStrike 的数据驱动/实验性策略模块，当前活跃策略恢复到 `release-03` 基线，并只保留中文界面、choice 索引、确认流程等机械兼容修复。
+> **AI 接手即读**：下方 P0-P5 章节是历史实验记录，不代表当前运行架构。
 
 ---
 
@@ -15,7 +15,7 @@
 | 介绍 | Slay the Spire AI Bot，通过 CommunicationMod 获得游戏状态，Python handler 做决策，Rust 做战斗演算 |
 | 当前策略 | `requested_strike` — 铁甲战士 Perfected Strike 流派 |
 | 核心引擎 | Python（Rust 命名风格模块） |
-| 数据 | `ironclad_clean.json` — 35,691 局人类玩家 Ironclad 运行记录 |
+| 数据 | `ironclad_clean.json` — 35,691 局人类玩家 Ironclad 运行记录；当前 RequestedStrike 基线不再读取该数据 |
 
 ## 二、项目结构
 
@@ -23,19 +23,17 @@
 bottled-ai-improved/
 ├── rs/                          # Rust 核心引擎
 │   ├── ai/requested_strike/     # ★ 当前活跃策略
-│   │   ├── config.py            # 卡牌评价、删卡优先级、药水列表
-│   │   ├── ironclad_comparator.py # 战斗决策比较器
+│   │   ├── config.py            # release-03 卡牌/删卡/药水基线列表
 │   │   ├── requested_strike.py  # 策略入口
 │   │   └── handlers/            # 各阶段决策处理器
 │   │       ├── neow_handler.py        # Neow 起始奖励
-│   │       ├── battle_handler.py      # 战斗
 │   │       ├── boss_relic_handler.py  # Boss 遗物选择
 │   │       ├── shop_purchase_handler.py # 商店购买
 │   │       ├── event_handler.py       # 事件选择
 │   │       ├── upgrade_handler.py     # 篝火升级
 │   │       └── potions_handler.py     # 药水使用
 │   ├── calculator/              # 战斗演算 (Monte Carlo tree search)
-│   ├── common/                  # 共用 handler 基类
+│   ├── common/                  # 共用 handler；RequestedStrike 当前使用通用战斗/选牌/路线/篝火/删牌
 │   ├── game/                    # 游戏实体定义
 │   └── machine/                 # 状态机
 ├── tests/                       # Python 测试
