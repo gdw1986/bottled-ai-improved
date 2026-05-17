@@ -112,6 +112,23 @@ class ShopPurchaseHandler(Handler):
             "Pommel Strike", # draw + damage
         ]
 
+        # These are strong enough to buy before spending gold on ordinary
+        # Strike/Defend removal. Curse removal still comes first.
+        self.cards_before_purge = [
+            "Apotheosis",
+            "Offering",
+            "Battle Trance",
+            "Shockwave",
+            "Impervious",
+            "Reaper",
+            "Corruption",
+            "Feel No Pain",
+            "Dark Embrace",
+            "Limit Break",
+            "Feed",
+            "Immolate",
+        ]
+
     def can_handle(self, state: GameState) -> bool:
         return state.screen_type() == ScreenType.SHOP_SCREEN.value
 
@@ -179,30 +196,42 @@ class ShopPurchaseHandler(Handler):
                     log_to_run(f"[SHOP] Buying Membership Card for {relic['price']}")
                     return action
 
-        # Safety: if we got here and have low gold, just leave
-        if gold < 100:
-            return ''
-
         # 2. Purge curses
         if can_purge and state.deck.contains_curses_we_can_remove():
             action = choose_purge()
             if action:
                 return action
 
-        # 3. Perfected Strike — core archetype card
+        # Safety: if we got here and have low gold, just leave
+        if gold < 100:
+            return ''
+
+        deck_card_ids = state.get_deck_card_list_by_id()
+
+        # 3. Top-tier cards before ordinary purge
+        for wanted in self.cards_before_purge:
+            wanted_lower = wanted.lower()
+            for i, card in enumerate(shop_cards):
+                if card['id'].lower() == wanted_lower and gold >= card['price']:
+                    if wanted_lower not in deck_card_ids:
+                        action = choose_card(i)
+                        if action:
+                            return action
+
+        # 4. Perfected Strike — core archetype card
         for i, card in enumerate(shop_cards):
             if card['id'] == 'Perfected Strike' and gold >= card['price']:
                 action = choose_card(i)
                 if action:
                     return action
 
-        # 4. Purge in general (avoid duplicates by checking deck has cards to remove)
+        # 5. Purge in general (avoid duplicates by checking deck has cards to remove)
         if can_purge and state.deck.contains_cards(CARD_REMOVAL_PRIORITY_LIST):
             action = choose_purge()
             if action:
                 return action
 
-        # 5. Relics based on priority list (match by id - always English)
+        # 6. Relics based on priority list (match by id - always English)
         for wanted in self.relics:
             for i, relic in enumerate(shop_relics):
                 if relic['id'] == wanted and gold >= relic['price']:
@@ -210,8 +239,7 @@ class ShopPurchaseHandler(Handler):
                     if action:
                         return action
 
-        # 6. Cards based on list (match by id - always English)
-        deck_card_ids = state.get_deck_card_list_by_id()
+        # 7. Cards based on list (match by id - always English)
         for wanted in self.cards:
             wanted_lower = wanted.lower()
             for i, card in enumerate(shop_cards):
@@ -221,7 +249,7 @@ class ShopPurchaseHandler(Handler):
                         if action:
                             return action
 
-        # 7. Potions we want — only if we have empty slots (check FIRST)
+        # 8. Potions we want — only if we have empty slots (check FIRST)
         if not state.are_potions_full():
             for i, potion in enumerate(shop_potions):
                 if potion.get('price', 999) <= gold:
@@ -230,5 +258,5 @@ class ShopPurchaseHandler(Handler):
                         log_to_run(f"[SHOP] Buying potion {potion['id']} for {potion['price']}")
                         return action
 
-        # 8. If gold is low or nothing good found, just leave
+        # 9. If gold is low or nothing good found, just leave
         return ''
