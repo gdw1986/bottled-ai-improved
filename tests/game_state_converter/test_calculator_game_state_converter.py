@@ -36,6 +36,17 @@ class GameStateConverterTest(unittest.TestCase):
         self.assertIn(RelicId.BLOOD_VIAL, battle_state.relics)
         self.assertIn(RelicId.PEN_NIB, battle_state.relics)
 
+    def test_battle_state_with_localized_relic_names_uses_ids(self):
+        state = load_resource_state("battles/general/battle_state_pen_nib.json")
+        for relic in state.game_state()["relics"]:
+            relic["name"] = "localized relic name"
+
+        battle_state = create_battle_state(state)
+
+        self.assertIn(RelicId.BURNING_BLOOD, battle_state.relics)
+        self.assertIn(RelicId.BLOOD_VIAL, battle_state.relics)
+        self.assertIn(RelicId.PEN_NIB, battle_state.relics)
+
     def test_battle_state_with_powers(self):
         state = load_resource_state("battles/general/battle_state_enemy_vulnerable.json")
         battle_state = create_battle_state(state)

@@ -1,7 +1,7 @@
 from typing import List
 
 from rs.calculator.enums.card_id import CardId
-from rs.game.card import Card, CardType
+from rs.game.card import Card, CardType, card_id_to_name, compact_card_name
 
 
 class Deck:
@@ -30,16 +30,10 @@ class Deck:
         return False
 
     def contains_cards(self, names: List[str]) -> bool:
-        names = [element.lower() for element in names]
+        names = [compact_card_name(element) for element in names]
         for card in self.cards:
-            # Use card id (always English) instead of name (may be localized)
-            base_id = card.id.lower()
-            # Strip character suffix for base cards: Strike_R/Strike_G -> strike
-            for suffix in ('_r', '_g', '_b', '_p'):
-                if base_id.endswith(suffix):
-                    base_id = base_id[:-len(suffix)]
-                    break
-            if base_id in names:
+            # Use card id (always English) instead of name (may be localized).
+            if compact_card_name(card_id_to_name(card.id)) in names:
                 return True
         return False
 
@@ -48,14 +42,10 @@ class Deck:
         amount = 0
         cmp = card_name.lower()
         want_upgraded = cmp.endswith('+')
-        cmp_base = cmp.rstrip('+')
+        cmp_base = compact_card_name(cmp.rstrip('+'))
         for c in self.cards:
-            # Use card id (always English) instead of name (may be localized)
-            base_id = c.id.lower()
-            for suffix in ('_r', '_g', '_b', '_p'):
-                if base_id.endswith(suffix):
-                    base_id = base_id[:-len(suffix)]
-                    break
+            # Use card id (always English) instead of name (may be localized).
+            base_id = compact_card_name(card_id_to_name(c.id))
             is_upgraded = c.upgrades > 0
             if base_id == cmp_base and is_upgraded == want_upgraded:
                 amount += 1

@@ -1,5 +1,7 @@
 import unittest
+from unittest.mock import patch
 
+from rs.ai.requested_strike.handlers.card_reward_handler import DynamicCardRewardHandler
 from rs.ai.requested_strike.handlers.dynamic_card_picker import (
     _lookup_card_data,
     deck_features,
@@ -32,6 +34,29 @@ class DynamicCardPickerTestCase(unittest.TestCase):
             strength_synergy_bonus('limit break', ['spot weakness'], act=2),
             strength_synergy_bonus('limit break', [], act=2)
         )
+
+    def test_dynamic_reward_uses_current_act_and_respects_copy_caps(self):
+        class FakeState:
+            def get_choice_list_upgrade_stripped_from_choice(self):
+                return ['shockwave', 'perfected strike']
+
+            def get_deck_card_list_by_name_with_upgrade_stripped(self):
+                return {'perfected strike': 3}
+
+            def game_state(self):
+                return {'room_phase': 'COMPLETE'}
+
+            def act(self):
+                return 2
+
+        handler = DynamicCardRewardHandler({'shockwave': 1, 'perfected strike': 3})
+
+        with patch('rs.ai.requested_strike.handlers.card_reward_handler.pick_best_card') as picker:
+            picker.return_value = 'shockwave'
+            action = handler.handle(FakeState())
+
+        picker.assert_called_once_with(['shockwave'], ['perfected strike'] * 3, 2, min_samples=20)
+        self.assertEqual(['choose 0', 'wait 30'], action.commands)
 
 
 if __name__ == '__main__':

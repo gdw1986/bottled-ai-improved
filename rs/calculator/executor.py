@@ -1,5 +1,6 @@
 from typing import List, Optional
-import random
+import hashlib
+import json
 
 from rs.calculator.battle_state import PLAY_DISCARD, Play, PLAY_EXHAUST, BattleState
 from rs.calculator.game_state_converter import create_battle_state, battlestate_deepcopy
@@ -38,27 +39,33 @@ def get_best_battle_action_with_retry(
     the order in which card plays are explored. This helps find better card
     ordering when multiple paths have similar scores.
 
-    The best result (lowest HP loss) is returned.
+    The best result according to the comparator is returned. This keeps the
+    retry tie-breaker aligned with the normal battle evaluator instead of
+    flattening each attempt down to final HP only.
     """
+    original_state = create_battle_state(game_state)
     best_path = None
-    best_hp = -1
 
     for attempt in range(retries):
-        seed = hash(str(game_state) + str(attempt)) % (2 ** 31)
+        seed = _stable_shuffle_seed(game_state, attempt)
         path = get_best_battle_path(game_state, comparator, max_path_count, shuffle_seed=seed)
 
         if path is None:
             continue
 
-        # Evaluate by final HP (higher is better)
-        final_hp = path.state.player.current_hp
-        if best_path is None or final_hp > best_hp:
-            best_hp = final_hp
+        if best_path is None or comparator.does_challenger_defeat_the_best(
+                best_path.state, path.state, original_state):
             best_path = path
 
     if best_path and best_path.plays:
         return _build_action_from_path(best_path, game_state)
     return None
+
+
+def _stable_shuffle_seed(game_state: GameState, attempt: int) -> int:
+    payload = json.dumps(game_state.json, sort_keys=True, ensure_ascii=True)
+    digest = hashlib.sha256(f"{payload}:{attempt}".encode("utf-8")).hexdigest()
+    return int(digest[:8], 16)
 
 
 def get_best_battle_action(game_state: GameState, comparator: ComparatorInterface, max_path_count: int = 11_000) -> \

@@ -29,6 +29,10 @@ default_preferences = [
 ]
 
 
+def normalize_relic_id(relic_id: str) -> str:
+    return ''.join(ch for ch in str(relic_id).lower() if ch.isalnum()).rstrip('0123456789')
+
+
 class CommonBossRelicHandler(Handler):
     energy_relics = [
         "sozu",
@@ -69,8 +73,11 @@ class CommonBossRelicHandler(Handler):
         # we have to copy this, otherwise it will modify the prefs list until the bot is rerun
         prefs = self.pref.copy()
 
-        has_energy_relic = bool(len(list(
-            filter(lambda r: r['name'].lower() in self.energy_relics, state.get_relics()))))
+        energy_relic_keys = {normalize_relic_id(relic) for relic in self.energy_relics}
+        has_energy_relic = any(
+            normalize_relic_id(relic.get('id', relic.get('name', ''))) in energy_relic_keys
+            for relic in state.get_relics()
+        )
 
         self.adjust_preferences_based_on_game_state(prefs, state, has_energy_relic)
         self.avoid_combining_snecko_and_pyramid(prefs, state)

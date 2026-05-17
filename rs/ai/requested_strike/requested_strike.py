@@ -3,10 +3,11 @@ from typing import List
 from rs.ai.requested_strike.config import CARD_REMOVAL_PRIORITY_LIST, DESIRED_CARDS_FOR_DECK, HIGH_PRIORITY_UPGRADES, \
     DESIRED_POTIONS
 from rs.ai.requested_strike.handlers.boss_relic_handler import BossRelicHandler
+from rs.ai.requested_strike.handlers.discard_pile_handler import DiscardPileToTopDeckHandler
 from rs.ai.requested_strike.handlers.event_handler import EventHandler
 from rs.ai.requested_strike.handlers.neow_handler import NeowHandler
 from rs.ai.requested_strike.handlers.potions_handler import PotionsScalingHandler, PotionsHealHandler, \
-    PotionsEmergencyHandler
+    PotionsEmergencyHandler, SmokeBombEscapeHandler, LiquidMemoriesHandler, LiquidMemoriesGridHandler
 from rs.ai.requested_strike.handlers.shop_purchase_handler import ShopPurchaseHandler
 from rs.ai.requested_strike.handlers.upgrade_handler import UpgradeHandler
 from rs.common.handlers.common_astrolabe_handler import CommonAstrolabeHandler
@@ -27,7 +28,10 @@ from rs.machine.character import Character
 from rs.machine.handlers.handler import Handler
 
 requested_strike_custom_battle_handlers: List[Handler] = [
-    # Potion Handlers — scaling first (proactive), then heal, then emergency (reactive)
+    # Potion Handlers: special-case tactical potions before generic proactive/reactive use.
+    LiquidMemoriesHandler(),
+    SmokeBombEscapeHandler(),
+    LiquidMemoriesGridHandler(),
     PotionsScalingHandler(),
     PotionsHealHandler(),
     PotionsEmergencyHandler(),
@@ -44,6 +48,7 @@ REQUESTED_STRIKE: AiStrategy = AiStrategy(
         BossRelicHandler(),
         UpgradeHandler(),
         CommonTransformHandler(CARD_REMOVAL_PRIORITY_LIST),
+        DiscardPileToTopDeckHandler(),
         CommonGridSelectHandler(CARD_REMOVAL_PRIORITY_LIST),
         PurgeHandler(),
         CommonCombatRewardHandler(desired_potions=DESIRED_POTIONS),

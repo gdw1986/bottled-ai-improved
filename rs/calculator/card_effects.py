@@ -112,6 +112,9 @@ def get_card_effects(card: CardInterface, player: PlayerInterface, draw_pile: Li
         return [CardEffects(damage=9 if not card.upgrade else 10, hits=1, draw=1, target=TargetType.MONSTER)]
     if card.id == CardId.SHRUG_IT_OFF:
         return [CardEffects(block=8 if not card.upgrade else 11, draw=1, target=TargetType.SELF)]
+    if card.id == CardId.TRUE_GRIT:
+        return [CardEffects(block=7 if not card.upgrade else 9, target=TargetType.SELF,
+                            amount_to_exhaust=1 if card.upgrade else 0)]
     if card.id == CardId.WHIRLWIND:
         base_damage = 5 if not card.upgrade else 8
         return [CardEffects(damage=base_damage, hits=get_x_trigger_amount(player), target=TargetType.ALL_MONSTERS)]
@@ -299,6 +302,9 @@ def get_card_effects(card: CardInterface, player: PlayerInterface, draw_pile: Li
                             post_hooks=[panache_post_hook])]
     if card.id == CardId.SADISTIC_NATURE:
         return [CardEffects(target=TargetType.SELF, applies_powers={PowerId.SADISTIC: 5 if not card.upgrade else 7})]
+    if card.id == CardId.SEARING_BLOW:
+        damage = 12 + card.upgrade * (card.upgrade + 7) // 2
+        return [CardEffects(damage=damage, hits=1, target=TargetType.MONSTER)]
 
     # silent cards
     if card.id == CardId.NEUTRALIZE:

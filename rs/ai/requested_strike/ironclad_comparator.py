@@ -6,6 +6,7 @@ Changes from the generic comparator:
 2. Removed Berserk from powers_we_like (applies Vulnerable — net negative)
 3. Added survival-priority comparisons: block under threat, setup when safe
 4. Prioritize killing dangerous enemies first (Gremlin Leader minions, Slavers' Red Slaver)
+5. Gremlin Nob-specific enrage control to avoid low-value Skill cards
 """
 from typing import List, Optional
 
@@ -71,11 +72,12 @@ def raw_incoming_damage(state: BattleState) -> int:
     """Compute raw incoming damage (before block)."""
     total = 0
     for m in state.monsters:
-        if not m.hits or m.damage == -1:
+        if m.is_gone or m.current_hp <= 0 or not m.hits or m.damage == -1:
             continue
         strength = m.powers.get(PowerId.STRENGTH, 0)
         weak_mod = 0.75 if m.powers.get(PowerId.WEAKENED) else 1.0
-        total += max(int((m.damage + strength) * weak_mod), 0)
+        hit_damage = max(int((m.damage + strength) * weak_mod), 0)
+        total += hit_damage * m.hits
     return total
 
 
@@ -125,6 +127,47 @@ def penalizes_low_hp_setup_ironclad(best: CA, challenger: CA) -> Optional[bool]:
     if best_hp_pct < 0.3 or chal_hp_pct < 0.3:
         if best.incoming_damage() != challenger.incoming_damage():
             return challenger.incoming_damage() < best.incoming_damage()
+    return None
+
+
+def prefers_aggressive_damage(best: CA, challenger: CA) -> Optional[bool]:
+    """When both paths are safe, prefer dealing more damage this turn.
+
+    The simulator evaluates each turn independently, so it can't see that
+    killing a monster this turn means 0 incoming damage next turn. This
+    function nudges toward paths that deal more damage when survival is
+    not at risk — the core insight behind "dead enemies deal 0 damage."
+
+    Positioned after survival/threat checks (battle_not_lost, HP-loss safety)
+    but before enemy management, so it acts as a general aggression nudge
+    that particularly benefits Act 1 (where every point of damage matters
+    against Hexaghost, Lagavulin, and early elites).
+
+    This function does NOT fire when:
+    - One path loses significantly more HP (threshold: 8+ HP difference)
+      → let least_hp_loss_non_nob handle it
+    - One path is clearly safer (block > threat difference)
+      → let prefers_block_under_threat handle it
+    """
+    # Both paths must survive
+    best_survives = best.state.player.current_hp > 0
+    chal_survives = challenger.state.player.current_hp > 0
+    if not (best_survives and chal_survives):
+        return None
+
+    # Don't override significant block differences
+    best_net_threat = max(0, raw_incoming_damage(best.state) - best.state.player.block)
+    chal_net_threat = max(0, raw_incoming_damage(challenger.state) - challenger.state.player.block)
+    threat_diff = abs(best_net_threat - chal_net_threat)
+    if threat_diff > 10:
+        return None  # Significant threat difference → let block comparators handle it
+
+    # Both are comparably safe → prefer more damage (lower total monster HP)
+    best_remaining_hp = sum(m.current_hp for m in best.state.monsters if m.current_hp > 0)
+    chal_remaining_hp = sum(m.current_hp for m in challenger.state.monsters if m.current_hp > 0)
+
+    if best_remaining_hp != chal_remaining_hp:
+        return chal_remaining_hp < best_remaining_hp
     return None
 
 
@@ -282,6 +325,43 @@ def least_hp_loss_non_nob(best: CA, challenger: CA) -> Optional[bool]:
     return chal_hp_loss < best_hp_loss
 
 
+def nob_enrage_strength_gain(assessment: CA) -> int:
+    """Count extra Nob strength while the fight is still far enough from lethal."""
+    total = 0
+    for i, monster in enumerate(assessment.state.monsters):
+        if monster.is_gone or monster.current_hp <= 15:
+            continue
+        if not monster.powers.get(PowerId.ANGER_NOB, 0):
+            continue
+
+        original_strength = 0
+        if i < len(assessment.original.monsters):
+            original_strength = assessment.original.monsters[i].powers.get(PowerId.STRENGTH, 0)
+
+        strength_gain = monster.powers.get(PowerId.STRENGTH, 0) - original_strength
+        total += max(0, strength_gain)
+    return total
+
+
+def prefers_less_nob_enrage(best: CA, challenger: CA) -> Optional[bool]:
+    """Against Gremlin Nob, prefer paths that trigger Enrage fewer times.
+
+    `least_nob_adjusted_scaling_damage` prices Nob's extra Strength as future
+    incoming damage, but at medium HP a Defend can still look slightly better
+    because it saves HP immediately. This comparison is a more direct Nob rule:
+    if the Nob is still healthy and both paths are live, avoid adding Strength
+    unless another earlier comparison already found a win/survival reason.
+    """
+    if best.battle_won() or challenger.battle_won():
+        return None
+
+    best_enrage = nob_enrage_strength_gain(best)
+    chal_enrage = nob_enrage_strength_gain(challenger)
+    if best_enrage == chal_enrage:
+        return None
+    return chal_enrage < best_enrage
+
+
 # ---------------------------------------------------------------------------
 # Ironclad comparison chain
 # ---------------------------------------------------------------------------
@@ -293,7 +373,10 @@ ironclad_comparisons: List[Comparison] = [
     preserve_revive_options,
     most_optimal_winning_battle,
 
-    # 2. Gremlin Nob: account for future damage from skills increasing Enrage strength
+    # 2. Gremlin Nob: actively avoid low-value Skills that feed Enrage.
+    prefers_less_nob_enrage,
+
+    # 2.1. Gremlin Nob: account for future damage from skills increasing Enrage strength
     least_nob_adjusted_scaling_damage,
 
     # 2.5. Non-Nob HP-loss safety net: prevent clearly unfavorable damage trades.
@@ -306,6 +389,11 @@ ironclad_comparisons: List[Comparison] = [
     prefers_block_under_threat,            # High threat → more block
     penalizes_low_hp_setup_ironclad,       # Low HP → minimize damage
     prefers_setup_when_safe,               # Safe → play powers
+
+    # 3.5. Aggressive damage: when both paths are safe, prefer dealing more damage.
+    # "Dead enemies deal 0 damage" — this nudges toward finishing fights faster,
+    # especially valuable in Act 1 (Hexaghost, Lagavulin, early elites).
+    prefers_aggressive_damage,
 
     # 4. Enemy management — dangerous targets first
     prefers_killing_dangerous_enemy_first,  # Kill Red Slaver / Gremlin minions
@@ -385,3 +473,21 @@ class IroncladComparator(CommonGeneralComparator):
             powers_we_dislike=powers_we_dislike,
         )
         super().__init__(comparisons=ironclad_comparisons, assessment_config=assessment_config)
+
+
+ironclad_gremlin_nob_comparisons: List[Comparison] = [
+    c for c in ironclad_comparisons
+    if c not in (most_free_early_draw, most_free_draw, least_incoming_damage_over_1)
+]
+
+
+class IroncladGremlinNobComparator(CommonGeneralComparator):
+    """Ironclad comparator variant for Gremlin Nob fights."""
+
+    def __init__(self):
+        assessment_config = ComparatorAssessmentConfig(
+            powers_we_like=ironclad_powers_we_like,
+            powers_we_like_less=base_powers_we_like_less,
+            powers_we_dislike=powers_we_dislike,
+        )
+        super().__init__(comparisons=ironclad_gremlin_nob_comparisons, assessment_config=assessment_config)

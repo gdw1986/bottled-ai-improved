@@ -266,6 +266,7 @@ class CardId(Enum):
     SAFETY = 'safety'
     SECOND_WIND = 'second wind'
     SEEING_RED = 'seeing red'
+    SEARING_BLOW = 'searing blow'
     SELF_REPAIR = 'self repair'
     SENTINEL = 'sentinel'
     SEVER_SOUL = 'sever soul'
@@ -312,6 +313,7 @@ class CardId(Enum):
     TOOLS_OF_THE_TRADE = 'tools of the trade'
     TRANQUILITY = 'clearthemind'  # Weird id alert!
     TRIP = 'trip'
+    TRUE_GRIT = 'true grit'
     TURBO = 'turbo'
     TWIN_STRIKE = 'twin strike'
     UNLOAD = 'unload'

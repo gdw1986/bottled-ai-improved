@@ -1,5 +1,6 @@
 from rs.common.handlers.common_event_handler import CommonEventHandler
 from rs.game.event import Event
+from rs.machine.handlers.handler_action import HandlerAction
 from rs.machine.state import GameState
 
 
@@ -7,12 +8,25 @@ class EventHandler(CommonEventHandler):
     def __init__(self, removal_priority_list, cards_desired_for_deck):
         super().__init__(removal_priority_list=removal_priority_list, cards_desired_for_deck=cards_desired_for_deck)
 
+    def handle(self, state: GameState) -> HandlerAction:
+        if state.get_event() == Event.WHEEL_OF_CHANGE and len(state.get_choice_list()) == 1:
+            return HandlerAction(commands=["choose 0"])
+
+        return super().handle(state)
+
     def find_event_choice(self, state: GameState) -> str | None:
         hp_per = state.get_player_health_percentage() * 100
         event = state.get_event()
 
         # Changes vs common handler: mainly a few health thresholds are lower
         match event:
+            case Event.BIG_FISH:
+                if hp_per <= 50:
+                    return "choose 0"  # Heal before taking early elites/bosses.
+                if state.get_relic_counter("Omamori") >= 1 and hp_per >= 65:
+                    return "choose 2"  # Relic and curse.
+                return "choose 1"  # Max health up.
+
             case Event.GOLDEN_IDOL:
                 if state.has_relic("Ectoplasm"):
                     return "choose 1"  # Leave!

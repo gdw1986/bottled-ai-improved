@@ -1,7 +1,13 @@
 """
 Data-driven card selection for Ironclad Requested Strike.
 Generated from 35,691 cleaned runs (overall wr 10.8%).
-Cards sorted by upgraded winrate. Copy counts set by practical limits.
+
+Act 1 survival-focused revision:
+- Reduced from 56 to ~30 card types for faster deck convergence
+- Prioritized Act 1 performers (11-18% act_1 winrate)
+- Removed slow scaling cards (Barricade, Corruption, Demon Form, etc.)
+- Increased copies of core damage cards (Perfected Strike, Twin Strike)
+- AoE is critical: Cleave (delta -1.0%, best Act 1 consistency), Whirlwind, Thunderclap
 """
 
 CARD_REMOVAL_PRIORITY_LIST = [
@@ -51,88 +57,57 @@ CARD_REMOVAL_PRIORITY_LIST = [
     'searing blow+1',
 ]
 
-# == Data-Driven DESIRED_CARDS_FOR_DECK ==
-# Format: {card_name: max_copies}, sorted by upgraded winrate contribution
-# Notation: "base_wr% → upgraded_wr%" shows winrate impact
+# == Act 1 Focused DESIRED_CARDS_FOR_DECK ==
+# Reduced pool (~30 types) for faster convergence on core damage/block.
+# Act 1 winrate in comments where available.
+# Sorted by strategic importance, not raw winrate.
 DESIRED_CARDS_FOR_DECK: dict[str, int] = {
-    # S-tier: 36-42% upgraded winrate — auto-pick first copy
-    'offering': 1,           # 20% → 42%
-    'impervious': 1,         # 21% → 41%
-    'battle trance': 2,      # 16% → 37% (exhausts, 2 max)
-    'limit break': 1,        # 15% → 36%
+    # ═══ S-tier: Core Engine (auto-pick first copy) ═══
+    'offering': 1,             # 18.4% Act 1 — draw + energy
+    'impervious': 1,           # 16.6% Act 1 — burst block
+    'battle trance': 1,        # 14.5% Act 1 — draw (1 copy, exhausts)
+    'limit break': 1,          # 17.7% Act 1 — strength multiplier
+    'shrug it off': 3,         # 13.4% Act 1 — universal block + draw
 
-    # A-tier: 31-34% upgraded winrate
-    'armaments': 2,          # 20% → 32% (upgrades whole hand, top 5 picked)
-    'exhume': 1,             # 18% → 34%
-    'sentinel': 1,           # 15% → 34%
-    'warcry': 2,             # 13% → 34%
-    'shockwave': 1,          # 15% → 33%
-    'power through': 2,      # 14% → 33%
-    'feel no pain': 1,       # 14% → 33%
-    'apotheosis': 1,         # 25% → 32%
-    'shrug it off': 3,       # 15% → 32% (universal A15+ winner: 64% deck presence)
-    'burning pact': 2,       # 13% → 31%
-    'brutality': 1,          # 16% → 31%
-    'double tap': 1,         # 15% → 31%
-    'corruption': 1,         # 15% → 31%
-    'disarm': 1,             # 15% → 31%
+    # ═══ A-tier: Core Damage (high priority) ═══
+    'perfected strike': 3,     # 13.0% Act 1 — best common damage engine
+    'twin strike': 2,          # 12.3% Act 1 — cheap, scales w/str
+    'pommel strike': 2,        # 11.9% Act 1 — draw + damage
+    'clash': 2,                # 12.9% Act 1 — 0-cost conditional
+    'sword boomerang': 2,      # 11.7% Act 1 — multi-hit, scales w/str
+    'whirlwind': 2,            # 12.5% Act 1 — AoE, scales w/energy
+    'thunderclap': 1,          # 11.5% Act 1 — AoE + Vulnerable
+    'cleave': 1,               # 11.1% Act 1 — AoE, best delta (-1.0%)
 
-    # B-tier: 28-31% upgraded winrate
-    'barricade': 1,          # 11% → 30%
-    'demon form': 1,         # 12% → 30%
-    'sword boomerang': 2,    # 12% → 30%
-    'dark embrace': 1,       # 13% → 29%
-    'reaper': 1,             # 22% → 29%
-    'dropkick': 2,           # 14% → 29%
-    'ghostly armor': 1,      # 14% → 29%
-    'heavy blade': 2,        # 11% → 29%
-    'pommel strike': 2,      # 12% → 29%
-    'intimidate': 1,         # 14% → 29%
-    'second wind': 1,        # 13% → 29%
-    'juggernaut': 1,         # 15% → 28%
-    'entrench': 1,           # 12% → 28%
-    'metallicize': 1,        # 15% → 27%
-    'spot weakness': 2,      # 14% → 27%
-    'body slam': 2,          # 12% → 27%
-    'iron wave': 2,          # 11% → 27%
-    'dual wield': 2,         # 10% → 27%
-    'inflame': 1,            # 14% → 27%
-    'flame barrier': 1,      # 13% → 27%
-    'fiend fire': 1,         # 17% → 26%
-    'evolve': 1,             # 11% → 26%
-    'true grit': 2,          # 10% → 25%
-    'uppercut': 1,           # 12% → 25%
-    'pummel': 2,             # 14% → 25% (scales w/str, 2 max)
+    # ═══ A-tier: Core Block ═══
+    'power through': 2,        # 13.3% Act 1 — high block (wound cost)
+    'flame barrier': 1,        # early block vs multi-hit
+    'shockwave': 1,            # 15.2% Act 1 — AoE Vuln+Weak
+    'armaments': 2,            # upgrade engine
 
-    # Perfected Strike — situational, not primary (max 2, let synergies emerge naturally)
-    'twin strike': 2,        # 14% → 25%
-    'perfected strike': 2,   # 10% → 26% (adaptive: dynamic picker steers based on deck state)
-    'clash': 2,              # 13% → 26%
+    # ═══ B-tier: Strength Scaling ═══
+    'inflame': 1,              # 12.9% Act 1 — strength source
+    'spot weakness': 1,        # conditional strength
+    'flex': 1,                 # 0-cost temp strength
 
-    # Colorless / Shop (high base wr, pick opportunistically)
-    'j.a.x.': 1,            # 0-cost +2 STR (self-damage 3; +3 STR upgraded)
-    'master of strategy': 1, # 36% base
-    'dark shackles': 1,      # 33% base
-    'flash of steel': 1,     # 29% base
-    'panache': 1,            # 25% base
-    'panacea': 1,            # 25% base
-    'finesse': 1,            # 25% base
-    'mayhem': 1,             # 25% → 30%
-    'bandage up': 1,         # 23% base
-    'trip': 1,               # 22% → 30%
-    'blind': 1,              # 21% base
-    'handofgreed': 1,        # 17% base
+    # ═══ B-tier: Sustain & Growth ═══
+    'reaper': 1,               # 17.9% Act 1 — AoE + healing
+    'feed': 1,                 # 15.3% Act 1 — max HP growth
+    'immolate': 1,             # 14.7% Act 1 — premium AoE
 
-    # Act 1 commons for early survival
-    'cleave': 1,             # 13% → 23%
-    'clothesline': 1,        # 12% → 25%
-    'thunderclap': 1,        # 13% → 24%
-    'anger': 1,              # 11% → 20%
-    'headbutt': 2,           # 14% → 25%
+    # ═══ B-tier: Utility ═══
+    'disarm': 1,               # 12.7% Act 1 — enemy strength reduction
+    'headbutt': 1,             # 11.3% Act 1 — deck manipulation
+    'true grit': 1,            # exhaust utility
+    'burning pact': 1,         # exhaust + draw
+    'second wind': 1,          # exhaust + block
 
-    # AoE & burst (high appearance in A15+ wins, formerly missing)
-    'whirlwind': 2,          # 12% → 30%
-    'flex': 2,               # 13% → 28%
+    # ═══ Colorless / Shop (opportunistic) ═══
+    'j.a.x.': 1,              # 0-cost +2 STR
+    'master of strategy': 1,  # draw
+    'dark shackles': 1,       # emergency block
+    'apotheosis': 1,          # upgrade everything
+    'finesse': 1,             # 0-cost block + draw
 }
 
 HIGH_PRIORITY_UPGRADES = [

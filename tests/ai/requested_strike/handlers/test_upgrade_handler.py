@@ -6,4 +6,4 @@ class TestUpgradeHandler(RsTestHandlerFixture):
     handler = UpgradeHandler
 
     def test_upgrade_bash(self):
-        self.execute_handler_tests('/other/upgrade_bash.json', ['choose bash'])
+        self.execute_handler_tests('/other/upgrade_bash.json', ['choose 9'])

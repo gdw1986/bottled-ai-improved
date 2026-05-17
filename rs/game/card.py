@@ -1,4 +1,47 @@
 from enum import Enum
+import re
+
+
+_BASE_CARD_IDS = {
+    "strike_r": "strike",
+    "strike_g": "strike",
+    "strike_b": "strike",
+    "strike_p": "strike",
+    "strike": "strike",
+    "defend_r": "defend",
+    "defend_g": "defend",
+    "defend_b": "defend",
+    "defend_p": "defend",
+    "defend": "defend",
+}
+
+_SPECIAL_CARD_ID_NAMES = {
+    "handofgreed": "handofgreed",
+    "talktothehand": "talk to the hand",
+    "waveofthehand": "wave of the hand",
+}
+
+
+def card_id_to_name(card_id: str) -> str:
+    """Convert Communication Mod card ids to strategy/config card names."""
+    if not card_id:
+        return ""
+
+    lower_id = card_id.lower()
+    if lower_id in _BASE_CARD_IDS:
+        return _BASE_CARD_IDS[lower_id]
+    if lower_id in _SPECIAL_CARD_ID_NAMES:
+        return _SPECIAL_CARD_ID_NAMES[lower_id]
+
+    stripped_id = re.sub(r"_[rRgGbBpP]$", "", card_id)
+    stripped_id = stripped_id.replace("_", " ")
+    stripped_id = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", stripped_id)
+    return stripped_id.lower()
+
+
+def compact_card_name(card_name: str) -> str:
+    """Normalize card names for loose comparisons across ids/display names."""
+    return re.sub(r"[\s_\-+]+", "", card_name.lower())
 
 
 class Card:

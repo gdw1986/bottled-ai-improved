@@ -68,7 +68,9 @@ run_seeds = [
 '1Y0PNICHZMB5',
 'Y28X68WL701F'
 ]
-# run_seeds = []
+# run_seeds = [
+# '7VECZLGSCEYI'
+# ]
 run_amount = 1 
 strategy = REQUESTED_STRIKE
 

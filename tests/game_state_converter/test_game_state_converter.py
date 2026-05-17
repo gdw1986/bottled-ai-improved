@@ -16,6 +16,15 @@ class GameStateConverterTest(unittest.TestCase):
         counter = state.get_relic_counter("Girya")
         self.assertEqual(0, counter)
 
+    def test_get_relic_counter_uses_id_when_name_is_localized(self):
+        state = load_resource_state("campfire/campfire_girya_lift.json")
+        for relic in state.game_state()["relics"]:
+            if relic["id"] == "Girya":
+                relic["name"] = "壶铃"
+
+        self.assertTrue(state.has_relic("Girya"))
+        self.assertEqual(0, state.get_relic_counter("Girya"))
+
     def test_get_relic_counter_failure(self):
         state = load_resource_state("campfire/campfire_rest.json")
         counter = state.get_relic_counter("Girya")
@@ -40,6 +49,33 @@ class GameStateConverterTest(unittest.TestCase):
         state = load_resource_state("card_reward/card_reward_skip_because_amount_and_some_in_deck_are_upgraded.json")
         deck_list = state.get_deck_card_list_by_name_with_upgrade_stripped()
         self.assertEqual({'bash': 1, 'defend': 4, 'strike': 3, 'twin strike': 2}, deck_list)
+
+    def test_get_deck_card_list_uses_ids_when_names_are_localized(self):
+        state = load_resource_state("card_reward/card_reward_skip_because_amount_and_some_in_deck_are_upgraded.json")
+        for card in state.deck.cards:
+            if card.id == "Strike_R":
+                card.name = "打击"
+            elif card.id == "Defend_R":
+                card.name = "防御"
+            elif card.id == "Bash":
+                card.name = "痛击"
+            elif card.id == "Twin Strike":
+                card.name = "双重打击"
+
+        deck_list = state.get_deck_card_list_by_name_with_upgrade_stripped()
+        self.assertEqual({'bash': 1, 'defend': 4, 'strike': 3, 'twin strike': 2}, deck_list)
+
+    def test_contains_cards_matches_compact_ids(self):
+        state = load_resource_state(
+            "battles/specific_comparator_cases/waiting_lagavulin/"
+            "waiting_lagavulin_turn_1_with_talk_to_the_hand_in_deck.json"
+        )
+
+        self.assertTrue(state.deck.contains_cards(["Talk To The Hand"]))
+
+    def test_act_accessor(self):
+        state = load_resource_state("card_reward/card_reward_skip_because_amount_and_some_in_deck_are_upgraded.json")
+        self.assertEqual(state.game_state()["act"], state.act())
 
     def test_custom_state_is_initialized_if_missing(self):
         state = load_resource_state("battles/general/battle_state_pen_nib.json", memory_book=None)

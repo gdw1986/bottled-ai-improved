@@ -1,14 +1,23 @@
 import json
-import re
 from typing import List
 
 from rs.calculator.interfaces.memory_items import MemoryItem
+from rs.game.card import card_id_to_name
 from rs.game.deck import Deck
 from rs.game.event import Event
 from rs.machine.command import Command
 from rs.machine.orb import Orb
 from rs.machine.the_bots_memory_book import TheBotsMemoryBook
 import sys
+
+
+def _compact_identifier(value: str) -> str:
+    return ''.join(ch for ch in str(value).lower() if ch.isalnum())
+
+
+def _compact_identifier_variants(value: str) -> set[str]:
+    compact = _compact_identifier(value)
+    return {compact, compact.rstrip('0123456789')}
 
 
 class GameState:
@@ -81,15 +90,7 @@ class GameState:
                 cn_name = card.get("name")
                 en_id = card.get("id")
                 if cn_name and en_id:
-                    base_names = {
-                        "Strike_R": "strike", "Strike_G": "strike", "Strike_P": "strike", "Strike": "strike",
-                        "Defend_R": "defend", "Defend_G": "defend", "Defend_P": "defend", "Defend": "defend",
-                    }
-                    if en_id in base_names:
-                        en_name = base_names[en_id]
-                    else:
-                        import re
-                        en_name = re.sub(r'(?<=[a-z])(?=[A-Z])', ' ', en_id).lower()
+                    en_name = card_id_to_name(en_id)
                     if card.get("upgrades", 0) > 0:
                         en_name += "+"
                     name_map[cn_name] = en_name
@@ -161,14 +162,24 @@ class GameState:
         return self.game_state()["relics"]
 
     def has_relic(self, relic_name: str) -> bool:
+        target = _compact_identifier(relic_name)
         for relic in self.get_relics():
-            if relic['name'].lower() == relic_name.lower():
+            relic_keys = (
+                _compact_identifier_variants(relic.get('name', ''))
+                | _compact_identifier_variants(relic.get('id', ''))
+            )
+            if target in relic_keys:
                 return True
         return False
 
     def get_relic_counter(self, relic_name: str) -> int:
+        target = _compact_identifier(relic_name)
         for relic in self.get_relics():
-            if relic['name'] == relic_name:
+            relic_keys = (
+                _compact_identifier_variants(relic.get('name', ''))
+                | _compact_identifier_variants(relic.get('id', ''))
+            )
+            if target in relic_keys:
                 return relic['counter']
         return False
 
@@ -228,6 +239,9 @@ class GameState:
     def floor(self) -> int:
         return self.game_state()["floor"]
 
+    def act(self) -> int:
+        return self.game_state()["act"]
+
     def player_entangled(self):
         return bool(next((p for p in self.get_player_combat()["powers"] if p["id"] == "Entangled"), None))
 
@@ -244,8 +258,8 @@ class GameState:
     def get_deck_card_list_by_name_with_upgrade_stripped(self) -> dict[str, int]:
         cards = {}
         for card in self.deck.cards:
-            name = card.name.replace("+", "")
-            name = name.lower()
+            # Use card id (always English) instead of name (may be localized).
+            name = card_id_to_name(card.id)
             if name in cards:
                 cards[name] += 1
             else:
@@ -292,10 +306,7 @@ class GameState:
             cn_name = card.get("name", "")
             en_id = card.get("id", "")
             if cn_name and en_id:
-                en_display = re.sub(r'(?<=[a-z])(?=[A-Z])', ' ', en_id).lower()
-                # Strip role suffix: _R (Ironclad), _P (Watcher), _B (Silent), _G (colorless)
-                en_display = re.sub(r'_[rRgGbBpP]$', '', en_display)
-                name_map[cn_name] = en_display
+                name_map[cn_name] = card_id_to_name(en_id)
         return name_map
 
     def get_falling_event_options(self) -> list:

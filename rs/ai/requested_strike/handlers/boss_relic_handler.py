@@ -15,7 +15,6 @@ class BossRelicHandler(CommonBossRelicHandler):
             "coffee dripper",            # 17.6% wr (removed if act 1 or has energy relic)
             "busted crown",              # 16.7% wr (removed if act 1 or has energy relic)
             "mark of pain",              # 16.3% wr (removed if already has energy relic)
-            "runic dome",                # 15.7% wr
             "velvet choker",             # 15.4% wr
             "fusion hammer",             # 14.9% wr
             "sozu",                      # 14.3% wr
@@ -36,9 +35,14 @@ class BossRelicHandler(CommonBossRelicHandler):
     def adjust_preferences_based_on_game_state(self, prefs: List[str], state: GameState, has_energy_relic: bool):
         act = state.game_state()['act']
 
+        if 'runic dome' in prefs:
+            prefs.remove('runic dome')
+
         if act == 1 or has_energy_relic:
-            prefs.remove('busted crown')
-            prefs.remove('coffee dripper')
+            for relic in ('busted crown', 'coffee dripper'):
+                if relic in prefs:
+                    prefs.remove(relic)
 
         if has_energy_relic:
-            prefs.remove('mark of pain')
+            if 'mark of pain' in prefs:
+                prefs.remove('mark of pain')

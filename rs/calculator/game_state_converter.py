@@ -40,9 +40,19 @@ def make_card(card: GameCard) -> CardInterface:
 
 
 possible_relic_ids = set(item.value for item in RelicId)
+possible_relic_ids_by_compact_id = {
+    ''.join(ch for ch in item.value.lower() if ch.isalnum()): item
+    for item in RelicId
+}
 
 
 def make_relic_id(relic_id: str) -> RelicId:
+    compact_id = ''.join(ch for ch in relic_id.lower() if ch.isalnum())
+    if compact_id in possible_relic_ids_by_compact_id:
+        return possible_relic_ids_by_compact_id[compact_id]
+    compact_without_numeric_suffix = compact_id.rstrip('0123456789')
+    if compact_without_numeric_suffix in possible_relic_ids_by_compact_id:
+        return possible_relic_ids_by_compact_id[compact_without_numeric_suffix]
     if relic_id not in possible_relic_ids:
         log_calculator_missing_relic(relic_id)
         return RelicId.FAKE
@@ -60,9 +70,21 @@ def make_power_id(power_id: str) -> PowerId:
 
 
 possible_potion_ids = set(item.value for item in PotionId)
+possible_potion_ids_by_compact_id = {
+    ''.join(ch for ch in item.value.lower() if ch.isalnum()): item
+    for item in PotionId
+}
+potion_aliases_by_compact_id = {
+    'fairypotion': PotionId.FAIRY_IN_A_BOTTLE,
+}
 
 
 def make_potion_id(potion_id: str) -> PotionId:
+    compact_id = ''.join(ch for ch in potion_id.lower() if ch.isalnum())
+    if compact_id in potion_aliases_by_compact_id:
+        return potion_aliases_by_compact_id[compact_id]
+    if compact_id in possible_potion_ids_by_compact_id:
+        return possible_potion_ids_by_compact_id[compact_id]
     if potion_id not in possible_potion_ids:
         log_calculator_missing_potion(potion_id)
         return PotionId.FAKE
@@ -89,12 +111,12 @@ def create_battle_state(game_state: GameState) -> BattleState:
 
     # get relics
     relics: Relics = {
-        make_relic_id(relic['name'].lower()): (relic['counter'])
+        make_relic_id(relic.get('id', relic['name']).lower()): (relic['counter'])
         for relic in game_state.game_state()['relics']
     }
     # get potions
     potions: Potions = [
-        make_potion_id(potion['name'].lower())
+        make_potion_id(potion.get('id', potion['name']).lower())
         for potion in game_state.game_state()['potions']
     ]
 

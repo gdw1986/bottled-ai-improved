@@ -8,11 +8,13 @@ from rs.helper.seed import get_seed_string
 from rs.machine.ai_strategy import AiStrategy
 from rs.machine.default_game_over import DefaultGameOverHandler
 from rs.machine.handlers.default_cancel import DefaultCancelHandler
+from rs.machine.handlers.default_close_overlay import DefaultCloseOverlayHandler
 from rs.machine.handlers.default_choose import DefaultChooseHandler
 from rs.machine.handlers.default_confirm import DefaultConfirmHandler
 from rs.machine.handlers.default_end import DefaultEndHandler
 from rs.machine.handlers.default_leave import DefaultLeaveHandler
 from rs.machine.handlers.default_play import DefaultPlayHandler
+from rs.machine.handlers.default_return import DefaultReturnHandler
 from rs.machine.handlers.default_shop import DefaultShopHandler
 from rs.machine.handlers.default_wait import DefaultWaitHandler
 from rs.machine.state import GameState
@@ -26,6 +28,8 @@ DEFAULT_GAME_HANDLERS = [
     DefaultPlayHandler(),
     DefaultEndHandler(),
     DefaultCancelHandler(),
+    DefaultReturnHandler(),
+    DefaultCloseOverlayHandler(),
     DefaultWaitHandler(),
 ]
 
