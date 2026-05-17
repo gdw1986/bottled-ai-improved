@@ -13,6 +13,7 @@ from typing import List, Optional
 from rs.calculator.battle_state import BattleState
 from rs.calculator.enums.card_id import CardId
 from rs.calculator.enums.power_id import PowerId
+from rs.calculator.enums.relic_id import RelicId
 from rs.calculator.powers import DEBUFFS
 from rs.game.card import CardType
 from rs.common.comparators.common_general_comparator import (
@@ -169,6 +170,28 @@ def prefers_aggressive_damage(best: CA, challenger: CA) -> Optional[bool]:
     if best_remaining_hp != chal_remaining_hp:
         return chal_remaining_hp < best_remaining_hp
     return None
+
+
+def has_block_retention(assessment: CA) -> bool:
+    """Return whether block can actually carry into the next turn."""
+    player_powers = assessment.state.player.powers
+    return (
+        player_powers.get(PowerId.BARRICADE, 0) > 0
+        or player_powers.get(PowerId.BLUR, 0) > 0
+        or RelicId.CALIPERS in assessment.state.relics
+    )
+
+
+def most_retained_block_saved_for_next_turn(best: CA, challenger: CA) -> Optional[bool]:
+    """Prefer saved block only when the current state can retain block.
+
+    BattleState records ordinary end-of-turn block in saved_block_for_next_turn
+    before clearing it. That is useful diagnostic data, but it should not make
+    Requested Strike spend cards on extra Defends when block will not persist.
+    """
+    if not (has_block_retention(best) or has_block_retention(challenger)):
+        return None
+    return most_block_saved_for_next_turn(best, challenger)
 
 
 def prefers_killing_dangerous_enemy_first(best: CA, challenger: CA) -> Optional[bool]:
@@ -422,7 +445,7 @@ ironclad_comparisons: List[Comparison] = [
     most_enemy_weak,
 
     # 7. Damage / protection
-    most_block_saved_for_next_turn,
+    most_retained_block_saved_for_next_turn,
     least_incoming_damage_over_1,
     least_incoming_damage,
 

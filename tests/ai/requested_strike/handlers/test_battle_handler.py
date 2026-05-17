@@ -1,4 +1,5 @@
 import unittest
+from types import SimpleNamespace
 
 from ai.requested_strike.rs_test_handler_fixture import RsTestHandlerFixture
 from rs.calculator.interfaces.memory_items import MemoryItem
@@ -12,9 +13,12 @@ from rs.ai.requested_strike.ironclad_comparator import (
     lowest_health_monster,
     lowest_total_monster_health,
     most_enemy_vulnerable,
+    most_retained_block_saved_for_next_turn,
     prefers_less_nob_enrage,
     raw_incoming_damage,
 )
+from rs.calculator.enums.power_id import PowerId
+from rs.calculator.enums.relic_id import RelicId
 from rs.ai.requested_strike.handlers.battle_handler import IroncladBattleHandler
 from rs.calculator.game_state_converter import create_battle_state
 from rs.game.card import CardType
@@ -115,6 +119,17 @@ class RequestedStrikeBattleHandlerTestCase(RsTestHandlerFixture):
             "has_target": has_target,
         }
 
+    @staticmethod
+    def _assessment(saved_block: int, powers: dict | None = None, relics: dict | None = None):
+        return SimpleNamespace(
+            state=SimpleNamespace(
+                saved_block_for_next_turn=saved_block,
+                player=SimpleNamespace(powers=powers or {}),
+                relics=relics or {},
+            ),
+            block_for_next_turn=lambda: saved_block,
+        )
+
     def test_raw_incoming_damage_counts_multi_hits(self):
         state = self._combat_state([], monsters=[{
             "is_gone": False,
@@ -188,6 +203,24 @@ class RequestedStrikeBattleHandlerTestCase(RsTestHandlerFixture):
                         "strength_reduction should come after total_monster_health")
         self.assertLess(str_red_idx, vuln_idx,
                         "strength_reduction should come before enemy_vulnerable")
+
+    def test_ordinary_overblock_is_not_preferred_as_saved_block(self):
+        best = self._assessment(saved_block=0)
+        challenger = self._assessment(saved_block=10)
+
+        self.assertIsNone(most_retained_block_saved_for_next_turn(best, challenger))
+
+    def test_retained_block_is_still_preferred_with_block_retention(self):
+        best = self._assessment(saved_block=3, powers={PowerId.BARRICADE: 1})
+        challenger = self._assessment(saved_block=10, powers={PowerId.BARRICADE: 1})
+
+        self.assertTrue(most_retained_block_saved_for_next_turn(best, challenger))
+
+    def test_calipers_saved_block_is_still_preferred(self):
+        best = self._assessment(saved_block=0, relics={RelicId.CALIPERS: 1})
+        challenger = self._assessment(saved_block=5, relics={RelicId.CALIPERS: 1})
+
+        self.assertTrue(most_retained_block_saved_for_next_turn(best, challenger))
 
 
 if __name__ == '__main__':
