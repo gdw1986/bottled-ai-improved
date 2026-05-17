@@ -23,7 +23,7 @@ class RequestedStrikePurgeHandlerTestCase(unittest.TestCase):
     def test_purge_keeps_feel_no_pain_when_a_removal_card_is_available(self):
         state = self._build_purge_state()
 
-        self.assertEqual(['choose 1', 'wait 30'], PurgeHandler().handle(state).commands)
+        self.assertEqual(['choose 1', 'wait 30', 'confirm', 'wait 30'], PurgeHandler().handle(state).commands)
 
     def test_empty_cage_multi_select_no_duplicate_indices(self):
         """Bug fix: when num_cards=2 (e.g. Empty Cage), duplicate card names in
@@ -41,6 +41,7 @@ class RequestedStrikePurgeHandlerTestCase(unittest.TestCase):
         idx1 = int(choose_commands[1].split()[1])
         self.assertNotEqual(idx0, idx1,
                             f"choose {idx0} twice would toggle select/deselect -> infinite loop")
+        self.assertEqual(['confirm', 'wait 30'], action.commands[-2:])
 
     @staticmethod
     def _build_purge_state() -> GameState:

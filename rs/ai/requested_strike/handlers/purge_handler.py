@@ -75,6 +75,8 @@ class PurgeHandler(Handler):
                 commands.append(p_delay)
             commands.append(f"choose {card_index}")
             commands.append("wait 30")
+        commands.append("confirm")
+        commands.append("wait 30")
         return HandlerAction(commands=commands)
 
     def _get_choices(self, state: GameState) -> List[int]:

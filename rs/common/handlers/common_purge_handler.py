@@ -29,6 +29,8 @@ class CommonPurgeHandler(Handler):
                 commands.append(p_delay)
             commands.append("choose " + str(c))
             commands.append("wait 30")
+        commands.append("confirm")
+        commands.append("wait 30")
         return HandlerAction(commands=commands)
 
     def get_choices(self, state: GameState) -> List[int]:
