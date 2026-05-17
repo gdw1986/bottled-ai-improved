@@ -21,6 +21,20 @@ class DefaultCloseOverlayHandlerTestCase(unittest.TestCase):
         self.assertTrue(handler.can_handle(state))
         self.assertEqual(["key cancel", "wait 30"], handler.handle(state).commands)
 
+    def test_closes_settings_overlay_with_key_cancel(self):
+        state = MagicMock()
+        state.has_command.side_effect = lambda command: command == Command.KEY
+        state.game_state.return_value = {
+            "is_screen_up": True,
+            "screen_name": "SETTINGS",
+        }
+        state.screen_type.return_value = "NONE"
+
+        handler = DefaultCloseOverlayHandler()
+
+        self.assertTrue(handler.can_handle(state))
+        self.assertEqual(["key cancel", "wait 30"], handler.handle(state).commands)
+
     def test_does_not_handle_when_overlay_is_not_up(self):
         state = MagicMock()
         state.has_command.side_effect = lambda command: command == Command.KEY

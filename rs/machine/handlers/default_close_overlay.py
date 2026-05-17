@@ -9,6 +9,7 @@ class DefaultCloseOverlayHandler(Handler):
 
     closeable_screen_names = {
         "MASTER_DECK_VIEW",
+        "SETTINGS",
     }
 
     def can_handle(self, state: GameState) -> bool:
