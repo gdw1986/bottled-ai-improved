@@ -7,7 +7,8 @@ from rs.ai.requested_strike.handlers.discard_pile_handler import DiscardPileToTo
 from rs.ai.requested_strike.handlers.event_handler import EventHandler
 from rs.ai.requested_strike.handlers.neow_handler import NeowHandler
 from rs.ai.requested_strike.handlers.potions_handler import PotionsScalingHandler, PotionsHealHandler, \
-    PotionsEmergencyHandler, SmokeBombEscapeHandler, LiquidMemoriesHandler, LiquidMemoriesGridHandler
+    PotionsEmergencyHandler, SmokeBombEscapeHandler, LiquidMemoriesHandler, LiquidMemoriesGridHandler, \
+    SneckoOilEmergencyHandler
 from rs.ai.requested_strike.handlers.shop_purchase_handler import ShopPurchaseHandler
 from rs.ai.requested_strike.handlers.upgrade_handler import UpgradeHandler
 from rs.common.handlers.common_astrolabe_handler import CommonAstrolabeHandler
@@ -31,6 +32,7 @@ requested_strike_custom_battle_handlers: List[Handler] = [
     # Potion Handlers: special-case tactical potions before generic proactive/reactive use.
     LiquidMemoriesHandler(),
     SmokeBombEscapeHandler(),
+    SneckoOilEmergencyHandler(),
     LiquidMemoriesGridHandler(),
     PotionsScalingHandler(),
     PotionsHealHandler(),

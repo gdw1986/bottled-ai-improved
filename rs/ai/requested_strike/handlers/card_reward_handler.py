@@ -14,11 +14,11 @@ from rs.ai.requested_strike.handlers.dynamic_card_picker import pick_best_card
 ACT1_SURVIVAL_FALLBACK_CARDS = [
     ('uppercut', 1),
     ('clothesline', 1),
-    ('carnage', 1),
     ('ghostly armor', 1),
     ('iron wave', 1),
     ('metallicize', 1),
     ('feel no pain', 1),
+    ('intimidate', 1),
 ]
 
 
@@ -55,6 +55,12 @@ class DynamicCardRewardHandler(CommonCardRewardHandler):
             candidates.append(candidate)
 
         if not candidates:
+            fallback = self._pick_act1_survival_fallback(choice_list, deck_card_list, state)
+            if fallback is not None:
+                cmd = f"choose {choice_list.index(fallback)}"
+                if presentation_mode:
+                    return HandlerAction(commands=[p_delay, cmd, "wait 30"])
+                return HandlerAction(commands=[cmd, "wait 30"])
             return super().handle(state)
 
         best = pick_best_card(candidates, deck_names, act, min_samples=self._min_samples)
@@ -83,8 +89,6 @@ class DynamicCardRewardHandler(CommonCardRewardHandler):
             state: GameState,
     ) -> str | None:
         if state.act() != 1:
-            return None
-        if state.floor() > 6:
             return None
 
         for card, max_copies in ACT1_SURVIVAL_FALLBACK_CARDS:

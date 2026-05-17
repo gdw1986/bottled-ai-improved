@@ -58,6 +58,28 @@ class DynamicCardPickerTestCase(unittest.TestCase):
         picker.assert_called_once_with(['shockwave'], ['perfected strike'] * 3, 2, min_samples=20)
         self.assertEqual(['choose 0', 'wait 30'], action.commands)
 
+    def test_act1_survival_fallback_handles_cards_outside_main_pool(self):
+        class FakeState:
+            def get_choice_list_upgrade_stripped_from_choice(self):
+                return ['uppercut', 'ghostly armor']
+
+            def get_deck_card_list_by_name_with_upgrade_stripped(self):
+                return {}
+
+            def game_state(self):
+                return {'room_phase': 'COMPLETE'}
+
+            def act(self):
+                return 1
+
+        handler = DynamicCardRewardHandler({'shrug it off': 1})
+
+        with patch('rs.ai.requested_strike.handlers.card_reward_handler.pick_best_card') as picker:
+            action = handler.handle(FakeState())
+
+        picker.assert_not_called()
+        self.assertEqual(['choose 0', 'wait 30'], action.commands)
+
 
 if __name__ == '__main__':
     unittest.main()

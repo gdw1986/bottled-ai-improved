@@ -70,11 +70,11 @@ DESIRED_CARDS_FOR_DECK: dict[str, int] = {
     'shrug it off': 3,         # 13.4% Act 1 — universal block + draw
 
     # ═══ A-tier: Core Damage (high priority) ═══
-    'perfected strike': 3,     # 13.0% Act 1 — best common damage engine
+    'perfected strike': 2,     # 13.0% Act 1 — best common damage engine
     'twin strike': 2,          # 12.3% Act 1 — cheap, scales w/str
     'pommel strike': 2,        # 11.9% Act 1 — draw + damage
-    'clash': 2,                # 12.9% Act 1 — 0-cost conditional
-    'sword boomerang': 2,      # 11.7% Act 1 — multi-hit, scales w/str
+    'clash': 1,                # 12.9% Act 1 — 0-cost conditional
+    'sword boomerang': 1,      # 11.7% Act 1 — multi-hit, scales w/str
     'whirlwind': 2,            # 12.5% Act 1 — AoE, scales w/energy
     'thunderclap': 1,          # 11.5% Act 1 — AoE + Vulnerable
     'cleave': 1,               # 11.1% Act 1 — AoE, best delta (-1.0%)
@@ -84,6 +84,9 @@ DESIRED_CARDS_FOR_DECK: dict[str, int] = {
     'flame barrier': 1,        # early block vs multi-hit
     'shockwave': 1,            # 15.2% Act 1 — AoE Vuln+Weak
     'armaments': 2,            # upgrade engine
+    'ghostly armor': 1,        # large early block without wounds
+    'metallicize': 1,          # steady block for boss/elite fights
+    'feel no pain': 1,         # exhaust block payoff
 
     # ═══ B-tier: Strength Scaling ═══
     'inflame': 1,              # 12.9% Act 1 — strength source
@@ -96,7 +99,10 @@ DESIRED_CARDS_FOR_DECK: dict[str, int] = {
     'immolate': 1,             # 14.7% Act 1 — premium AoE
 
     # ═══ B-tier: Utility ═══
-    'disarm': 1,               # 12.7% Act 1 — enemy strength reduction
+    'disarm': 2,               # 12.7% Act 1 — enemy strength reduction
+    'uppercut': 1,             # weak + vulnerable for Act 1/2 anchors
+    'clothesline': 1,          # weak plus damage
+    'intimidate': 1,           # 0-cost AoE weak
     'headbutt': 1,             # 11.3% Act 1 — deck manipulation
     'true grit': 1,            # exhaust utility
     'burning pact': 1,         # exhaust + draw

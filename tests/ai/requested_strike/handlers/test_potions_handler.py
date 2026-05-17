@@ -8,6 +8,7 @@ from rs.ai.requested_strike.handlers.potions_handler import (
     PotionsEmergencyHandler,
     PotionsHealHandler,
     PotionsScalingHandler,
+    SneckoOilEmergencyHandler,
     SmokeBombEscapeHandler,
 )
 from rs.machine.state import GameState
@@ -49,6 +50,13 @@ class PotionsHandlerTestCase(RsTestHandlerFixture):
         self.assertTrue(handler.can_handle(state))
         self.assertEqual(["wait 30", "potion use 0", "wait 30"], handler.handle(state).commands)
 
+    def test_scaling_potion_uses_entropic_brew_in_boss(self):
+        state = self._potion_state("EntropicBrew", hp=60, room_type="MonsterRoomBoss")
+        handler = PotionsScalingHandler()
+
+        self.assertTrue(handler.can_handle(state))
+        self.assertEqual(["wait 30", "potion use 0", "wait 30"], handler.handle(state).commands)
+
     def test_healing_potion_matches_spaced_regen_id(self):
         state = self._potion_state("Regen Potion", hp=50, room_type="MonsterRoom")
         handler = PotionsHealHandler()
@@ -77,6 +85,18 @@ class PotionsHandlerTestCase(RsTestHandlerFixture):
         state = self._potion_state("SmokeBomb", hp=70, room_type="MonsterRoom")
 
         self.assertFalse(SmokeBombEscapeHandler().can_handle(state))
+
+    def test_snecko_oil_emergency_uses_in_dangerous_boss(self):
+        state = self._potion_state("SneckoOil", hp=20, room_type="MonsterRoomBoss")
+        handler = SneckoOilEmergencyHandler()
+
+        self.assertTrue(handler.can_handle(state))
+        self.assertEqual(["wait 30", "potion use 0", "wait 30"], handler.handle(state).commands)
+
+    def test_snecko_oil_emergency_does_not_use_in_safe_hallway(self):
+        state = self._potion_state("SneckoOil", hp=20, room_type="MonsterRoom")
+
+        self.assertFalse(SneckoOilEmergencyHandler().can_handle(state))
 
     def test_liquid_memories_uses_for_discard_lethal(self):
         state = self._potion_state(

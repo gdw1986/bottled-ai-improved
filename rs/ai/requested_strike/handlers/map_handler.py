@@ -13,9 +13,10 @@ Survivors average 0.7 higher max HP entering Act 2 than deaths.
 from rs.common.handlers.common_map_handler import CommonMapHandler
 from rs.game.path import PathHandlerConfig
 
-# More conservative estimates for Ironclad's weak early game
-CONSERVATIVE_HALLWAY_HP_LOSS = {1: 5, 2: 8, 3: 5}
-CONSERVATIVE_ELITE_HP_LOSS = {1: 22, 2: 20, 3: 15}
+# Gross damage estimates. Path simulation applies Burning Blood after fights,
+# so these need to include the pre-heal damage rather than the net HP loss.
+CONSERVATIVE_HALLWAY_HP_LOSS = {1: 11, 2: 14, 3: 11}
+CONSERVATIVE_ELITE_HP_LOSS = {1: 30, 2: 32, 3: 24}
 
 ironclad_map_config = PathHandlerConfig(
     hallway_fight_base_reward=1,

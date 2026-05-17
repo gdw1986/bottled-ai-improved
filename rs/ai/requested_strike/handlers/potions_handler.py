@@ -74,6 +74,8 @@ scaling_potions = [
     'BlockPotion',
     'Distilled Chaos',
     'DistilledChaos',
+    'Entropic Brew',
+    'EntropicBrew',
 ]
 
 # Healing potions — use before we're critically low
@@ -91,6 +93,7 @@ scaling_potion_ids = {normalize_potion_id(potion_id) for potion_id in scaling_po
 healing_potion_ids = {normalize_potion_id(potion_id) for potion_id in healing_potions}
 smoke_bomb_potion_ids = {normalize_potion_id(potion_id) for potion_id in ('Smoke Bomb', 'SmokeBomb')}
 liquid_memories_potion_ids = {normalize_potion_id(potion_id) for potion_id in ('Liquid Memories', 'LiquidMemories')}
+snecko_oil_potion_ids = {normalize_potion_id(potion_id) for potion_id in ('Snecko Oil', 'SneckoOil')}
 
 attack_damage = {
     'anger': 6,
@@ -524,6 +527,30 @@ class SmokeBombEscapeHandler(PotionsBaseHandler):
 
     def get_potions_to_play(self, state: GameState) -> List[dict]:
         return self._get_potions_by_id(state, smoke_bomb_potion_ids)
+
+
+class SneckoOilEmergencyHandler(PotionsBaseHandler):
+    """Use Snecko Oil only as a last-ditch boss/elite stabilizer."""
+
+    def can_handle(self, state: GameState) -> bool:
+        if not state.has_command(Command.POTION):
+            return False
+        if not state.combat_state():
+            return False
+        if state.screen_type() != ScreenType.NONE.value:
+            return False
+        if not self.get_potions_to_play(state):
+            return False
+
+        room_type = state.game_state().get('room_type')
+        if room_type not in ('MonsterRoomBoss', 'MonsterRoomElite'):
+            return False
+
+        current_hp = state.game_state().get('current_hp', 0)
+        return self._incoming_damage_after_block(state) >= current_hp or self._hp_percent(state) <= 25
+
+    def get_potions_to_play(self, state: GameState) -> List[dict]:
+        return self._get_potions_by_id(state, snecko_oil_potion_ids)
 
 
 class LiquidMemoriesGridHandler(PotionsBaseHandler):

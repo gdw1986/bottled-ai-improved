@@ -10,7 +10,7 @@ LOG_FILE = "logs/run_history.log"
 
 def parse_line(line: str) -> dict | None:
     """从一行日志中提取 commit, strategy, floor, win。"""
-    m = re.search(r'Commit:(\S+)', line)
+    m = re.search(r'Commit:([^,\s]+)', line)
     commit = m.group(1) if m else "unknown"
 
     m = re.search(r'Strat:\s*(\w+)', line)
@@ -19,6 +19,9 @@ def parse_line(line: str) -> dict | None:
     m = re.search(r'Floor:(\d+)', line)
     floor = int(m.group(1)) if m else None
 
+    m = re.search(r'DiedTo:\s*(.*?),\s*Bosses:', line)
+    died_to = m.group(1).strip() if m else None
+
     if strat is None or floor is None:
         return None
 
@@ -26,7 +29,8 @@ def parse_line(line: str) -> dict | None:
         "commit": commit,
         "strat": strat,
         "floor": floor,
-        "win": floor == 50,
+        "died_to": died_to,
+        "win": died_to == "N/A",
     }
 
 
