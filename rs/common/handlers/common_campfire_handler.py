@@ -49,7 +49,7 @@ class CommonCampfireHandler(Handler):
         elif 'toke' in choice_list and state.deck.contains_cards(self.card_removal_priorities):
             desired_choice = "toke"
 
-        idx = choice_list.index(desired_choice) if desired_choice in choice_list else 0
+        choice = desired_choice if desired_choice in choice_list else "0"
         if presentation_mode:
-            return HandlerAction(commands=[p_delay, "choose " + str(idx), p_delay])
-        return HandlerAction(commands=["choose " + str(idx)])
+            return HandlerAction(commands=[p_delay, "choose " + choice, p_delay])
+        return HandlerAction(commands=["choose " + choice])

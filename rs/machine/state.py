@@ -110,11 +110,18 @@ class GameState:
         # Rest screen: use rest_options for mapping
         elif screen_type == "REST" and "rest_options" in screen_state:
             raw_choice_list = self.game_state().get("choice_list", [])
-            rest_options = screen_state["rest_options"]
-            for i, opt in enumerate(rest_options):
-                if i < len(raw_choice_list):
+            rest_options = [opt.lower() for opt in screen_state["rest_options"]]
+            if len(raw_choice_list) == len(rest_options):
+                for i, opt in enumerate(rest_options):
                     # rest_options are always English even in Chinese game
-                    name_map[raw_choice_list[i]] = opt.lower()
+                    name_map[raw_choice_list[i]] = opt
+            else:
+                # Some states include unavailable rest options in rest_options.
+                # In that case, positional mapping can turn recall into lift.
+                for item in raw_choice_list:
+                    lowered = item.lower()
+                    if lowered in rest_options:
+                        name_map[item] = lowered
 
         # SHOP_ROOM: "shop" in choice_list
         elif screen_type == "SHOP_ROOM":
