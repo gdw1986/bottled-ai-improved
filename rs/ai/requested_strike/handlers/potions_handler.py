@@ -15,6 +15,65 @@ dont_play_potions = [
 ]
 
 
+def _potion_key(potion: dict) -> str:
+    return ''.join(ch for ch in potion.get('id', potion.get('name', '')).lower() if ch.isalnum())
+
+
+def _has_potion(potions: List[dict], potion_ids: List[str]) -> bool:
+    potion_keys = {_potion_key(p) for p in potions}
+    return bool(potion_keys & set(potion_ids))
+
+
+def _act_one_elite(state: GameState) -> bool:
+    return state.game_state()['room_type'] == "MonsterRoomElite" and state.game_state()['act'] == 1
+
+
+LAGAVULIN_SETUP_POTIONS = [
+    'strengthpotion',
+    'cultistpotion',
+    'ancientpotion',
+    'fearpotion',
+    'flexpotion',
+    'steroidpotion',
+    'firepotion',
+]
+
+NOB_OPENING_POTIONS = [
+    'strengthpotion',
+    'fearpotion',
+    'firepotion',
+    'flexpotion',
+    'steroidpotion',
+    'cultistpotion',
+    'weakpotion',
+]
+
+SENTRY_OPENING_POTIONS = [
+    'explosivepotion',
+    'strengthpotion',
+    'fearpotion',
+    'firepotion',
+    'dexteritypotion',
+    'blockpotion',
+    'speedpotion',
+]
+
+GENERAL_ELITE_POTIONS = [
+    'strengthpotion',
+    'fearpotion',
+    'firepotion',
+    'explosivepotion',
+    'cultistpotion',
+    'ancientpotion',
+    'flexpotion',
+    'steroidpotion',
+    'weakpotion',
+    'dexteritypotion',
+    'blockpotion',
+    'speedpotion',
+]
+
+
 class PotionsBaseHandler(Handler):
 
     def can_handle(self, state: GameState) -> bool:
@@ -42,7 +101,22 @@ class PotionsBaseHandler(Handler):
             if pot['can_use'] and pot['id'] not in dont_play_potions:
                 pot['idx'] = idx
                 to_play.append(pot)
-        return to_play
+        return sorted(to_play, key=lambda p: self.potion_priority(state, p))
+
+    def potion_priority(self, state: GameState, potion: dict) -> int:
+        key = _potion_key(potion)
+
+        if _act_one_elite(state):
+            if state.has_monster("Lagavulin") and key in LAGAVULIN_SETUP_POTIONS:
+                return LAGAVULIN_SETUP_POTIONS.index(key)
+            if state.has_monster("Gremlin Nob") and key in NOB_OPENING_POTIONS:
+                return NOB_OPENING_POTIONS.index(key)
+            if state.has_monster("Sentry") and key in SENTRY_OPENING_POTIONS:
+                return SENTRY_OPENING_POTIONS.index(key)
+            if key in GENERAL_ELITE_POTIONS:
+                return GENERAL_ELITE_POTIONS.index(key) + 20
+
+        return 100
 
 
 class PotionsEliteHandler(PotionsBaseHandler):
@@ -51,12 +125,29 @@ class PotionsEliteHandler(PotionsBaseHandler):
 
     def can_handle(self, state: GameState) -> bool:
         hp_per = state.get_player_health_percentage() * 100
+        potions = self.get_potions_to_play(state)
         return state.has_command(Command.POTION) \
                and state.combat_state() \
                and state.screen_type() == ScreenType.NONE.value \
                and state.game_state()['room_type'] == "MonsterRoomElite" \
-               and ((hp_per <= 50 and state.combat_state()['turn'] == 1) or hp_per <= 30) \
-               and self.get_potions_to_play(state)
+               and (((hp_per <= 50 and state.combat_state()['turn'] == 1) or hp_per <= 30)
+                    or self.should_use_act_one_elite_potion(state, potions)) \
+               and potions
+
+    def should_use_act_one_elite_potion(self, state: GameState, potions: List[dict]) -> bool:
+        if not _act_one_elite(state) or state.combat_state()['turn'] > 2:
+            return False
+
+        if state.has_monster("Lagavulin"):
+            return _has_potion(potions, LAGAVULIN_SETUP_POTIONS)
+
+        if state.has_monster("Gremlin Nob"):
+            return _has_potion(potions, NOB_OPENING_POTIONS)
+
+        if state.has_monster("Sentry"):
+            return _has_potion(potions, SENTRY_OPENING_POTIONS)
+
+        return _has_potion(potions, GENERAL_ELITE_POTIONS)
 
 
 class PotionsEventFightHandler(PotionsBaseHandler):  # Treat most Event Fights like Elites
