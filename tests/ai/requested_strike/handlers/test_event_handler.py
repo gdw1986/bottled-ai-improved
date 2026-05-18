@@ -39,3 +39,10 @@ def test_requested_strike_back_to_basics_alias_upgrades_strikes_and_defends():
     set_event(state, 'Back to Basics', '古老文字', ['简约', '质朴'])
 
     assert EventHandler().handle(state).commands == ['choose 1', 'wait 30']
+
+
+def test_requested_strike_golden_idol_takes_max_hp_loss_over_current_hp_loss():
+    state = load_resource_state('/event/event_unknown.json')
+    set_event(state, 'Golden Idol', '黄金神像', ['逃跑', '砸烂', '躲藏'])
+
+    assert EventHandler().handle(state).commands == ['choose 2', 'wait 30']

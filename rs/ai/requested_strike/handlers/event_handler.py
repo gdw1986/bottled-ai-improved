@@ -70,7 +70,7 @@ class EventHandler(Handler):
             if hp_per >= 90 and len(state.get_choice_list()) == 2:
                 return "choose 0"  # Go for it and take some damage
             if len(state.get_choice_list()) == 3:
-                return "choose 1"
+                return "choose 2"  # Lose max HP instead of current HP before early elite fights.
             else:
                 return "choose 1"  # Leave.
 
