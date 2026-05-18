@@ -6,6 +6,7 @@ import unittest
 from ai.common.co_test_handler_fixture import CoTestHandlerFixture
 from rs.calculator.enums.card_id import CardId
 from rs.calculator.interfaces.memory_items import MemoryItem, ResetSchedule, StanceType
+from rs.common.comparators.gremlin_nob_comparator import GremlinNobComparator
 from rs.common.handlers.common_battle_handler import CommonBattleHandler
 from rs.game.card import CardType
 from rs.machine.the_bots_memory_book import TheBotsMemoryBook
@@ -93,6 +94,14 @@ class BattleHandlerTestCase(CoTestHandlerFixture):
     def test_gremlin_nob_defensive_skill_not_worth_it(self):
         self.execute_handler_tests(
             'battles/specific_comparator_cases/gremlin_nob/gremlin_nob_defend_early.json', ['end'])
+
+    def test_gremlin_nob_comparator_uses_monster_id_when_name_is_localized(self):
+        state = load_resource_state('battles/specific_comparator_cases/gremlin_nob/gremlin_nob_defend_early.json')
+        state.game_state()["combat_state"]["monsters"][0]["name"] = "\u5730\u7cbe\u5927\u5757\u5934"
+
+        comparator = CommonBattleHandler().select_comparator(state)
+
+        self.assertIsInstance(comparator, GremlinNobComparator)
 
     def test_gremlin_nob_defensive_skill_worth_it(self):
         self.execute_handler_tests(

@@ -277,8 +277,13 @@ class GameState:
         return self.game_state()["map"]
 
     def has_monster(self, name: str) -> bool:
+        target_keys = _compact_identifier_variants(name)
         for monster in self.get_monsters():
-            if monster['name'] == name:
+            monster_keys = (
+                _compact_identifier_variants(monster.get('name', ''))
+                | _compact_identifier_variants(monster.get('id', ''))
+            )
+            if target_keys & monster_keys:
                 return True
         return False
 
