@@ -31,6 +31,10 @@ def _act_one_elite(state: GameState) -> bool:
 LAGAVULIN_SETUP_POTIONS = [
     'strengthpotion',
     'cultistpotion',
+    'regenpotion',
+    'liquidbronze',
+    'essenceofsteel',
+    'heartofiron',
     'ancientpotion',
     'fearpotion',
     'flexpotion',
@@ -46,14 +50,22 @@ NOB_OPENING_POTIONS = [
     'steroidpotion',
     'cultistpotion',
     'weakpotion',
+    'regenpotion',
+    'liquidbronze',
+    'essenceofsteel',
+    'heartofiron',
 ]
 
 SENTRY_OPENING_POTIONS = [
     'explosivepotion',
+    'liquidbronze',
     'strengthpotion',
     'fearpotion',
     'firepotion',
     'dexteritypotion',
+    'regenpotion',
+    'essenceofsteel',
+    'heartofiron',
     'blockpotion',
     'speedpotion',
 ]
@@ -65,12 +77,37 @@ GENERAL_ELITE_POTIONS = [
     'explosivepotion',
     'cultistpotion',
     'ancientpotion',
+    'regenpotion',
+    'liquidbronze',
+    'essenceofsteel',
+    'heartofiron',
     'flexpotion',
     'steroidpotion',
     'weakpotion',
     'dexteritypotion',
     'blockpotion',
     'speedpotion',
+]
+
+ACT_ONE_BOSS_POTIONS = [
+    'liquidbronze',
+    'strengthpotion',
+    'cultistpotion',
+    'fearpotion',
+    'firepotion',
+    'explosivepotion',
+    'regenpotion',
+    'essenceofsteel',
+    'heartofiron',
+    'dexteritypotion',
+    'flexpotion',
+    'steroidpotion',
+    'blockpotion',
+    'attackpotion',
+    'powerpotion',
+    'distilledchaos',
+    'duplicationpotion',
+    'blessingoftheforge',
 ]
 
 
@@ -115,6 +152,10 @@ class PotionsBaseHandler(Handler):
                 return SENTRY_OPENING_POTIONS.index(key)
             if key in GENERAL_ELITE_POTIONS:
                 return GENERAL_ELITE_POTIONS.index(key) + 20
+
+        if state.game_state()['room_type'] == "MonsterRoomBoss" and state.game_state()['act'] == 1:
+            if key in ACT_ONE_BOSS_POTIONS:
+                return ACT_ONE_BOSS_POTIONS.index(key)
 
         return 100
 

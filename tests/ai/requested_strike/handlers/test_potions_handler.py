@@ -43,6 +43,22 @@ class PotionsHandlerTestCase(RsTestHandlerFixture):
         self.assertTrue(handler.can_handle(state))
         self.assertEqual(['wait 30', 'potion use 0', 'wait 30'], handler.handle(state).commands)
 
+    def test_lagavulin_uses_regen_potion_before_waking(self):
+        state = load_resource_state(
+            '/battles/specific_comparator_cases/waiting_lagavulin/waiting_lagavulin_turn_1_without_powers.json')
+        state.game_state()['potions'][0] = {
+            "requires_target": False,
+            "can_use": True,
+            "can_discard": True,
+            "name": "Regen Potion",
+            "id": "Regen Potion",
+        }
+
+        handler = PotionsEliteHandler()
+
+        self.assertTrue(handler.can_handle(state))
+        self.assertEqual(['wait 30', 'potion use 0', 'wait 30'], handler.handle(state).commands)
+
     def test_gremlin_nob_uses_offensive_potion_before_low_hp(self):
         state = load_resource_state('/battles/specific_comparator_cases/gremlin_nob/gremlin_nob_defend_early.json')
 
@@ -69,6 +85,29 @@ class PotionsHandlerTestCase(RsTestHandlerFixture):
         }
 
         handler = PotionsEliteHandler()
+
+        self.assertTrue(handler.can_handle(state))
+        self.assertEqual(['wait 30', 'potion use 1', 'wait 30'], handler.handle(state).commands)
+
+    def test_act_one_boss_prioritizes_high_impact_opening_potion(self):
+        state = load_resource_state('/other/potions_boss.json')
+        state.game_state()['act'] = 1
+        state.game_state()['potions'][0] = {
+            "requires_target": False,
+            "can_use": True,
+            "can_discard": True,
+            "name": "Block Potion",
+            "id": "BlockPotion",
+        }
+        state.game_state()['potions'][1] = {
+            "requires_target": False,
+            "can_use": True,
+            "can_discard": True,
+            "name": "Liquid Bronze",
+            "id": "Liquid Bronze",
+        }
+
+        handler = PotionsBossHandler()
 
         self.assertTrue(handler.can_handle(state))
         self.assertEqual(['wait 30', 'potion use 1', 'wait 30'], handler.handle(state).commands)
