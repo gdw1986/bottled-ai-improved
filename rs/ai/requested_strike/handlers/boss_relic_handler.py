@@ -8,15 +8,14 @@ class BossRelicHandler(CommonBossRelicHandler):
 
     def __init__(self):
         super().__init__(preferred_relic_list=[
-            "sozu",
-            "runic dome",
             "philosopher\u0027s stone",
-            "ectoplasm",
-            "velvet choker",
             "cursed key",
             "fusion hammer",
-            "snecko eye",
+            "velvet choker",
+            "ectoplasm",
             "mark of pain",  # removed if already have another energy relic
+            "sozu",  # removed if already have another energy relic
+            "snecko eye",
             "busted crown",  # removed if already have another energy relic or it's act 1
             "coffee dripper",  # removed if already have another energy relic or it's act 1
             "slaver\u0027s collar",
@@ -32,9 +31,14 @@ class BossRelicHandler(CommonBossRelicHandler):
     def adjust_preferences_based_on_game_state(self, prefs: List[str], state: GameState, has_energy_relic: bool):
         act = state.game_state()['act']
 
+        def drop(relic: str):
+            if relic in prefs:
+                prefs.remove(relic)
+
         if act == 1 or has_energy_relic:
-            prefs.remove('busted crown')
-            prefs.remove('coffee dripper')
+            drop('busted crown')
+            drop('coffee dripper')
 
         if has_energy_relic:
-            prefs.remove('mark of pain')
+            drop('mark of pain')
+            drop('sozu')

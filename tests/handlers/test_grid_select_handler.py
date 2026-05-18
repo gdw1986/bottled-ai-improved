@@ -4,12 +4,15 @@ import pytest
 from unittest.mock import MagicMock
 
 from rs.common.handlers.common_grid_select_handler import CommonGridSelectHandler
+from rs.machine.command import Command
 
 
-def create_mock_state(choices, num_cards=2, selected_count=0, for_transform=False):
+def create_mock_state(choices, num_cards=2, selected_count=0, for_transform=False, confirm_available=True):
     """Create a mock game state for GRID screen."""
     state = MagicMock()
-    state.has_command.return_value = True
+    state.has_command.side_effect = lambda command: (
+        command == Command.CHOOSE or (confirm_available and command == Command.CONFIRM)
+    )
     state.get_choice_list.return_value = choices
     
     selected_cards = [{"name": "card"}] * selected_count
@@ -81,9 +84,21 @@ class TestGridSelectHandler:
         assert "confirm" in action.commands
 
     def test_ends_with_confirm(self):
-        """All selections should end with confirm."""
+        """Selections should confirm when the current grid exposes confirm."""
         handler = CommonGridSelectHandler(preferences=["strike"])
         state = create_mock_state(choices=["bash", "strike"], num_cards=1)
-        
+
         action = handler.handle(state)
         assert "confirm" in action.commands
+
+    def test_does_not_confirm_when_grid_lacks_confirm_command(self):
+        """Event grids can advance immediately after the final choice."""
+        handler = CommonGridSelectHandler(preferences=["strike"])
+        state = create_mock_state(
+            choices=["bash", "strike"],
+            num_cards=1,
+            confirm_available=False,
+        )
+
+        action = handler.handle(state)
+        assert action.commands == ["wait 30", "choose 1", "wait 30"]
