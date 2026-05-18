@@ -16,6 +16,8 @@ EVENT_NAME_ALIASES = {
     "Liars Game": "The Ssssserpent",
     "MindBloom": "Mind Bloom",
     "SensoryStone": "Sensory Stone",
+    "Transmorgrifier": "Transmogrifier",
+    "Back to Basics": "Ancient Writing",
 }
 
 

@@ -2,6 +2,17 @@ from rs.ai.requested_strike.handlers.event_handler import EventHandler
 from test_helpers.resources import load_resource_state
 
 
+def set_event(state, event_id, event_name, choices):
+    game_state = state.game_state()
+    game_state['choice_list'] = choices
+    game_state['screen_state']['event_id'] = event_id
+    game_state['screen_state']['event_name'] = event_name
+    game_state['screen_state']['options'] = [
+        {'choice_index': idx, 'disabled': False, 'text': f'[{choice}]', 'label': choice}
+        for idx, choice in enumerate(choices)
+    ]
+
+
 def test_requested_strike_liars_game_uses_ssssserpent_choice():
     state = load_resource_state('/event/event_unknown.json')
     game_state = state.game_state()
@@ -12,5 +23,19 @@ def test_requested_strike_liars_game_uses_ssssserpent_choice():
         {'choice_index': 0, 'disabled': False, 'text': '[\u540c\u610f]', 'label': '\u540c\u610f'},
         {'choice_index': 1, 'disabled': False, 'text': '[\u53cd\u5bf9]', 'label': '\u53cd\u5bf9'},
     ]
+
+    assert EventHandler().handle(state).commands == ['choose 1', 'wait 30']
+
+
+def test_requested_strike_transmorgrifier_alias_leaves():
+    state = load_resource_state('/event/event_unknown.json')
+    set_event(state, 'Transmorgrifier', '转化神龛', ['祈祷', '离开'])
+
+    assert EventHandler().handle(state).commands == ['choose 1', 'wait 30']
+
+
+def test_requested_strike_back_to_basics_alias_upgrades_strikes_and_defends():
+    state = load_resource_state('/event/event_unknown.json')
+    set_event(state, 'Back to Basics', '古老文字', ['简约', '质朴'])
 
     assert EventHandler().handle(state).commands == ['choose 1', 'wait 30']

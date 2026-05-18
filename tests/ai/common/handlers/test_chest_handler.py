@@ -1,5 +1,6 @@
 from ai.common.co_test_handler_fixture import CoTestHandlerFixture
 from rs.common.handlers.common_chest_handler import CommonChestHandler
+from test_helpers.resources import load_resource_state
 
 
 class ChestHandlerTestCase(CoTestHandlerFixture):
@@ -16,3 +17,11 @@ class ChestHandlerTestCase(CoTestHandlerFixture):
 
     def test_skip_chest_with_cursed_key_and_too_many_curses(self):
         self.execute_handler_tests('/other/chest_with_cursed_key_and_curses.json', ['proceed'])
+
+    def test_open_boss_chest_with_cursed_key_and_curses(self):
+        state = load_resource_state('/other/chest_with_cursed_key_and_curses.json')
+        state.game_state()['room_type'] = 'TreasureRoomBoss'
+
+        actual = CommonChestHandler().handle(state)
+
+        self.assertEqual(['choose 0', 'wait 30'], actual.commands)

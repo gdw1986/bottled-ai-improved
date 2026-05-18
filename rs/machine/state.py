@@ -85,8 +85,9 @@ class GameState:
 
         # Card-related screens: use card id to build name map
         if screen_type in ("GRID", "CARD_REWARD", "SHOP_SCREEN", "HAND_SELECT"):
-            cards = screen_state.get("cards", [])
-            for card in cards:
+            raw_choice_list = self.game_state().get("choice_list", [])
+            cards = screen_state.get("hand", []) if screen_type == "HAND_SELECT" else screen_state.get("cards", [])
+            for pos, card in enumerate(cards):
                 cn_name = card.get("name")
                 en_id = card.get("id")
                 if cn_name and en_id:
@@ -94,6 +95,8 @@ class GameState:
                     if card.get("upgrades", 0) > 0:
                         en_name += "+"
                     name_map[cn_name] = en_name
+                    if screen_type == "HAND_SELECT" and pos < len(raw_choice_list):
+                        name_map[raw_choice_list[pos]] = en_name
 
         # Event screens: map Chinese labels to English via option position
         elif screen_type == "EVENT" and "options" in screen_state:
