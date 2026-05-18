@@ -9,6 +9,27 @@ from rs.machine.handlers.handler_action import HandlerAction
 from rs.machine.state import GameState
 
 
+EVENT_NAME_ALIASES = {
+    "Mushrooms": "Hypnotizing Colored Mushrooms",
+    "Vampires": "Vampires(?)",
+    "WeMeetAgain": "We Meet Again!",
+    "Liars Game": "The Ssssserpent",
+    "MindBloom": "Mind Bloom",
+    "SensoryStone": "Sensory Stone",
+}
+
+
+def _canonical_event_name(screen_state: dict) -> str:
+    event_id = screen_state.get('event_id')
+    event_name = screen_state.get('event_name')
+
+    for candidate in (event_id, event_name):
+        if candidate in EVENT_NAME_ALIASES:
+            return EVENT_NAME_ALIASES[candidate]
+
+    return event_id or event_name
+
+
 class EventHandler(Handler):
 
     def can_handle(self, state: GameState) -> bool:
@@ -29,12 +50,7 @@ class EventHandler(Handler):
     def find_event_choice(self, state: GameState) -> str:
         hp_per = state.get_player_health_percentage() * 100
         screen_state = state.game_state()['screen_state']
-        event_name = screen_state.get('event_id') or screen_state.get('event_name')
-        event_name = {
-            "Mushrooms": "Hypnotizing Colored Mushrooms",
-            "Vampires": "Vampires(?)",
-            "WeMeetAgain": "We Meet Again!",
-        }.get(event_name, event_name)
+        event_name = _canonical_event_name(screen_state)
 
         # ACT 1
 

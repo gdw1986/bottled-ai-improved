@@ -14,8 +14,18 @@ class TestNeowHandler(CoTestHandlerFixture):
         options = state.game_state()['screen_state']['options']
         options[0]['label'] = '\u83b7\u5f97\u4e00\u5f20\u968f\u673a\u7a00\u6709\u724c'
         options[0]['text'] = '[ \u83b7\u5f97\u4e00\u5f20\u968f\u673a\u7a00\u6709\u724c ]'
-        options[1]['label'] = '\u83b7\u5f97\u4e00\u4e2a\u968f\u673a\u666e\u901a\u9057\u7269'
-        options[1]['text'] = '[ \u83b7\u5f97\u4e00\u4e2a\u968f\u673a\u666e\u901a\u9057\u7269 ]'
+        options[1]['label'] = '\u968f\u673a\u83b7\u5f97\u4e00\u4e2a\u666e\u901a\u9057\u7269'
+        options[1]['text'] = '[ \u968f\u673a\u83b7\u5f97\u4e00\u4e2a\u666e\u901a\u9057\u7269 ]'
+
+        self.assertEqual(['choose 1', 'wait 30'], CommonNeowHandler().handle(state).commands)
+
+    def test_handle_neow_chinese_common_relic_over_choose_card(self):
+        state = load_resource_state('/event/event_neow.json')
+        options = state.game_state()['screen_state']['options']
+        options[0]['label'] = '\u9009\u62e9\u5e76\u83b7\u5f97\u4e00\u5f20\u724c'
+        options[0]['text'] = '[ \u9009\u62e9\u5e76\u83b7\u5f97\u4e00\u5f20\u724c ]'
+        options[1]['label'] = '\u968f\u673a\u83b7\u5f97\u4e00\u4e2a\u666e\u901a\u9057\u7269'
+        options[1]['text'] = '[ \u968f\u673a\u83b7\u5f97\u4e00\u4e2a\u666e\u901a\u9057\u7269 ]'
 
         self.assertEqual(['choose 1', 'wait 30'], CommonNeowHandler().handle(state).commands)
 

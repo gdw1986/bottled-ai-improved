@@ -59,7 +59,8 @@ def _infer_neow_choice(label: str, choice_index: int) -> str | None:
         return 'choose a card to obtain'
     if 'upgrade a card' in normalized or '升级' in compact:
         return 'upgrade a card'
-    if 'random common relic' in normalized or '随机普通遗物' in compact:
+    if 'random common relic' in normalized \
+            or ('随机' in compact and '普通' in compact and '遗物' in compact):
         return 'obtain a random common relic'
     if '100' in compact and ('gold' in normalized or '金币' in compact):
         return 'obtain 100 gold'
