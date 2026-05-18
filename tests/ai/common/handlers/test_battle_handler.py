@@ -7,6 +7,7 @@ from ai.common.co_test_handler_fixture import CoTestHandlerFixture
 from rs.calculator.enums.card_id import CardId
 from rs.calculator.interfaces.memory_items import MemoryItem, ResetSchedule, StanceType
 from rs.common.comparators.gremlin_nob_comparator import GremlinNobComparator
+from rs.common.comparators.lagavulin_comparator import LagavulinComparator
 from rs.common.handlers.common_battle_handler import CommonBattleHandler
 from rs.game.card import CardType
 from rs.machine.the_bots_memory_book import TheBotsMemoryBook
@@ -182,6 +183,17 @@ class BattleHandlerTestCase(CoTestHandlerFixture):
         self.execute_handler_tests(
             '/battles/specific_comparator_cases/waiting_lagavulin/waiting_lagavulin_turn_1_without_powers.json',
             ['end'])
+
+    def test_awake_lagavulin_uses_aggressive_comparator(self):
+        state = load_resource_state(
+            '/battles/specific_comparator_cases/waiting_lagavulin/waiting_lagavulin_turn_1_without_powers.json')
+        monster = state.game_state()['combat_state']['monsters'][0]
+        monster['intent'] = 'ATTACK'
+        monster['move_id'] = 3
+
+        comparator = CommonBattleHandler().select_comparator(state)
+
+        self.assertIsInstance(comparator, LagavulinComparator)
 
     def test_waiting_lagavulin_turn_4(self):
         self.execute_handler_tests(

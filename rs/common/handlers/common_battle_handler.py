@@ -5,6 +5,7 @@ from rs.calculator.interfaces.comparator_interface import ComparatorInterface
 from rs.common.comparators.big_fight_comparator import BigFightComparator
 from rs.common.comparators.common_general_comparator import CommonGeneralComparator
 from rs.common.comparators.gremlin_nob_comparator import GremlinNobComparator
+from rs.common.comparators.lagavulin_comparator import LagavulinComparator
 from rs.common.comparators.three_sentry_comparator import ThreeSentriesComparator
 from rs.common.comparators.three_sentry_turn_1_comparator import ThreeSentriesTurn1Comparator
 from rs.common.comparators.transient_comparator import TransientComparator
@@ -21,6 +22,7 @@ class BattleHandlerConfig:
     big_fight_floors: list[int] = field(default_factory=lambda: [33, 50])
     big_fight_comparator: ComparatorInterface = BigFightComparator
     gremlin_nob_comparator: ComparatorInterface = GremlinNobComparator
+    lagavulin_comparator: ComparatorInterface = LagavulinComparator
     three_sentries_comparator: ComparatorInterface = ThreeSentriesComparator
     three_sentries_turn_1_comparator: ComparatorInterface = ThreeSentriesTurn1Comparator
     transient_comparator: ComparatorInterface = TransientComparator
@@ -53,9 +55,10 @@ class CommonBattleHandler(Handler):
         three_sentries_are_alive = state.has_monster("Sentry") \
                                           and alive_monsters == 3
 
-        lagavulin_is_sleeping = state.has_monster("Lagavulin") \
-                                and state.combat_state()['turn'] <= 2 \
-                                and not state.game_state()['room_type'] == "EventRoom"
+        lagavulin_is_present = state.has_monster("Lagavulin")
+
+        lagavulin_is_sleeping = self.lagavulin_is_waiting(state) \
+                                and state.combat_state()['turn'] <= 2
 
         lagavulin_is_worth_delaying = state.deck.contains_type(CardType.POWER) \
                                       or state.deck.contains_cards(["Terror", "Terror+"]) \
@@ -75,15 +78,26 @@ class CommonBattleHandler(Handler):
             return self.config.three_sentries_comparator()
         elif lagavulin_is_sleeping and lagavulin_is_worth_delaying:
             return self.config.waiting_lagavulin_comparator()
+        elif lagavulin_is_present:
+            return self.config.lagavulin_comparator()
         elif transient_is_present:
             return self.config.transient_comparator()
         return self.config.general_comparator()
 
+    def lagavulin_is_waiting(self, state: GameState) -> bool:
+        if state.game_state()['room_type'] == "EventRoom":
+            return False
+
+        for monster in state.get_monsters():
+            if monster.get("is_gone", False):
+                continue
+            monster_keys = {monster.get("id"), monster.get("name")}
+            if "Lagavulin" in monster_keys and monster.get("intent") in ("SLEEP", "DEBUG"):
+                return True
+        return False
+
     def should_wait_against_sleeping_lagavulin(self, state: GameState) -> bool:
-        lagavulin_is_sleeping = state.has_monster("Lagavulin") \
-                                and state.combat_state()['turn'] <= 2 \
-                                and not state.game_state()['room_type'] == "EventRoom"
-        if not lagavulin_is_sleeping:
+        if not self.lagavulin_is_waiting(state) or state.combat_state()['turn'] > 2:
             return False
 
         has_setup_in_hand = state.hand.contains_type(CardType.POWER) \
