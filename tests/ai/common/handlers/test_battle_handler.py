@@ -178,10 +178,10 @@ class BattleHandlerTestCase(CoTestHandlerFixture):
             '/battles/specific_comparator_cases/waiting_lagavulin/waiting_lagavulin_turn_1_with_terror_in_hand.json',
             ['play 1 0'])
 
-    def test_waiting_lagavulin_no_powers(self):
+    def test_waiting_lagavulin_waits_for_better_wake_hand(self):
         self.execute_handler_tests(
             '/battles/specific_comparator_cases/waiting_lagavulin/waiting_lagavulin_turn_1_without_powers.json',
-            ['play 3 0'])
+            ['end'])
 
     def test_waiting_lagavulin_turn_4(self):
         self.execute_handler_tests(

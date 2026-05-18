@@ -59,6 +59,24 @@ class PotionsHandlerTestCase(RsTestHandlerFixture):
         self.assertTrue(handler.can_handle(state))
         self.assertEqual(['wait 30', 'potion use 0', 'wait 30'], handler.handle(state).commands)
 
+    def test_lagavulin_uses_blood_potion_at_start_when_hurt(self):
+        state = load_resource_state(
+            '/battles/specific_comparator_cases/waiting_lagavulin/waiting_lagavulin_turn_1_without_powers.json')
+        state.game_state()['current_hp'] = 41
+        state.game_state()['combat_state']['player']['current_hp'] = 41
+        state.game_state()['potions'][0] = {
+            "requires_target": False,
+            "can_use": True,
+            "can_discard": True,
+            "name": "Blood Potion",
+            "id": "BloodPotion",
+        }
+
+        handler = PotionsEliteHandler()
+
+        self.assertTrue(handler.can_handle(state))
+        self.assertEqual(['wait 30', 'potion use 0', 'wait 30'], handler.handle(state).commands)
+
     def test_gremlin_nob_uses_offensive_potion_before_low_hp(self):
         state = load_resource_state('/battles/specific_comparator_cases/gremlin_nob/gremlin_nob_defend_early.json')
 
@@ -66,6 +84,29 @@ class PotionsHandlerTestCase(RsTestHandlerFixture):
 
         self.assertTrue(handler.can_handle(state))
         self.assertEqual(['wait 30', 'potion use 0 0', 'wait 30'], handler.handle(state).commands)
+
+    def test_nearly_dead_elite_does_not_spend_opening_potion(self):
+        state = load_resource_state('/battles/specific_comparator_cases/gremlin_nob/gremlin_nob_defend_early.json')
+        state.game_state()['combat_state']['monsters'][0]['current_hp'] = 1
+        state.game_state()['combat_state']['monsters'][0]['block'] = 0
+        state.game_state()['potions'][0] = {
+            "requires_target": False,
+            "can_use": True,
+            "can_discard": True,
+            "name": "Steroid Potion",
+            "id": "SteroidPotion",
+        }
+        state.game_state()['potions'][1] = {
+            "requires_target": False,
+            "can_use": True,
+            "can_discard": True,
+            "name": "Regen Potion",
+            "id": "Regen Potion",
+        }
+
+        handler = PotionsEliteHandler()
+
+        self.assertFalse(handler.can_handle(state))
 
     def test_three_sentries_prioritizes_explosive_potion(self):
         state = load_resource_state('/battles/specific_comparator_cases/three_sentries/sentry_yolo_state_with_three.json')

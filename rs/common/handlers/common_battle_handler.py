@@ -79,7 +79,30 @@ class CommonBattleHandler(Handler):
             return self.config.transient_comparator()
         return self.config.general_comparator()
 
+    def should_wait_against_sleeping_lagavulin(self, state: GameState) -> bool:
+        lagavulin_is_sleeping = state.has_monster("Lagavulin") \
+                                and state.combat_state()['turn'] <= 2 \
+                                and not state.game_state()['room_type'] == "EventRoom"
+        if not lagavulin_is_sleeping:
+            return False
+
+        has_setup_in_hand = state.hand.contains_type(CardType.POWER) \
+                            or state.hand.contains_cards(["Terror", "Terror+"]) \
+                            or state.hand.contains_cards(["Talk To The Hand", "Talk To The Hand+"])
+        has_good_wake_card = state.hand.contains_cards(["Bash", "Bash+"])
+
+        lagavulin_is_worth_delaying = state.deck.contains_type(CardType.POWER) \
+                                      or state.deck.contains_cards(["Terror", "Terror+"]) \
+                                      or state.deck.contains_cards(["Talk To The Hand", "Talk To The Hand+"]) \
+                                      or state.has_relic("Warped Tongs") \
+                                      or state.has_relic("Ice Cream")
+
+        return not has_setup_in_hand and (lagavulin_is_worth_delaying or not has_good_wake_card)
+
     def handle(self, state: GameState) -> HandlerAction:
+        if self.should_wait_against_sleeping_lagavulin(state) and state.has_command(Command.END):
+            return HandlerAction(commands=["end"], memory_book=None)
+
         actions = get_best_battle_action(state, self.select_comparator(state), self.max_path_count)
         if actions:
             return actions

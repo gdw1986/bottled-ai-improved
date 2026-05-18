@@ -28,10 +28,23 @@ def _act_one_elite(state: GameState) -> bool:
     return state.game_state()['room_type'] == "MonsterRoomElite" and state.game_state()['act'] == 1
 
 
+def _alive_monster_hp(state: GameState) -> int:
+    return sum(
+        monster.get('current_hp', 0) + monster.get('block', 0)
+        for monster in state.get_monsters()
+        if not monster.get('is_gone', False)
+    )
+
+
+def _elite_is_already_nearly_dead(state: GameState) -> bool:
+    return _act_one_elite(state) and _alive_monster_hp(state) <= 12
+
+
 LAGAVULIN_SETUP_POTIONS = [
     'strengthpotion',
     'cultistpotion',
     'regenpotion',
+    'bloodpotion',
     'liquidbronze',
     'essenceofsteel',
     'heartofiron',
@@ -78,6 +91,7 @@ GENERAL_ELITE_POTIONS = [
     'cultistpotion',
     'ancientpotion',
     'regenpotion',
+    'bloodpotion',
     'liquidbronze',
     'essenceofsteel',
     'heartofiron',
@@ -97,6 +111,7 @@ ACT_ONE_BOSS_POTIONS = [
     'firepotion',
     'explosivepotion',
     'regenpotion',
+    'bloodpotion',
     'essenceofsteel',
     'heartofiron',
     'dexteritypotion',
@@ -171,6 +186,7 @@ class PotionsEliteHandler(PotionsBaseHandler):
                and state.combat_state() \
                and state.screen_type() == ScreenType.NONE.value \
                and state.game_state()['room_type'] == "MonsterRoomElite" \
+               and not _elite_is_already_nearly_dead(state) \
                and (((hp_per <= 50 and state.combat_state()['turn'] == 1) or hp_per <= 30)
                     or self.should_use_act_one_elite_potion(state, potions)) \
                and potions
