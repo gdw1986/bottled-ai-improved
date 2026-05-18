@@ -7,10 +7,10 @@ class TestMassDiscardHandler(CoTestHandlerFixture):
     handler = CommonMassDiscardHandler
 
     def test_handle_mass_discard_with_relic(self):
-        self.execute_handler_tests('/other/discard_relic.json', ['choose strike'])
+        self.execute_handler_tests('/other/discard_relic.json', ['choose 1'])
 
     def test_handle_mass_discard_with_relic_curse(self):
-        self.execute_handler_tests('/other/discard_relic_curse.json', ['choose pain'])
+        self.execute_handler_tests('/other/discard_relic_curse.json', ['choose 1'])
 
     def test_handle_mass_discard_with_relic_done(self):
         self.execute_handler_tests('/other/discard_relic_done.json', ['confirm'])
@@ -35,4 +35,4 @@ class TestMassDiscardHandler(CoTestHandlerFixture):
 
         actual = CommonMassDiscardHandler().handle(state)
 
-        self.assertEqual(['choose strike'], actual.commands)
+        self.assertEqual(['choose 1'], actual.commands)
