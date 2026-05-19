@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 
 from rs.calculator.executor import get_best_battle_action
 from rs.calculator.interfaces.comparator_interface import ComparatorInterface
+from rs.common.comparators.act_one_boss_comparator import ActOneBossComparator
 from rs.common.comparators.big_fight_comparator import BigFightComparator
 from rs.common.comparators.common_general_comparator import CommonGeneralComparator
 from rs.common.comparators.gremlin_nob_comparator import GremlinNobComparator
@@ -19,6 +20,7 @@ from rs.machine.state import GameState
 
 @dataclass
 class BattleHandlerConfig:
+    act_one_boss_comparator: ComparatorInterface = ActOneBossComparator
     big_fight_floors: list[int] = field(default_factory=lambda: [33, 50])
     big_fight_comparator: ComparatorInterface = BigFightComparator
     gremlin_nob_comparator: ComparatorInterface = GremlinNobComparator
@@ -44,6 +46,10 @@ class CommonBattleHandler(Handler):
     def select_comparator(self, state: GameState) -> ComparatorInterface:
         alive_monsters = len(list(filter(lambda m: not m["is_gone"], state.get_monsters())))
 
+        act_one_guardian_or_hexaghost = state.game_state()['room_type'] == "MonsterRoomBoss" \
+                                        and state.game_state()['act'] == 1 \
+                                        and (state.has_monster("The Guardian") or state.has_monster("Hexaghost"))
+
         big_fight = state.floor() in self.config.big_fight_floors
 
         gremlin_nob_is_present = state.has_monster("Gremlin Nob")
@@ -68,7 +74,9 @@ class CommonBattleHandler(Handler):
 
         transient_is_present = state.has_monster("Transient") and alive_monsters == 1
 
-        if big_fight:
+        if act_one_guardian_or_hexaghost:
+            return self.config.act_one_boss_comparator()
+        elif big_fight:
             return self.config.big_fight_comparator()
         elif gremlin_nob_is_present:
             return self.config.gremlin_nob_comparator()

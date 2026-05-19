@@ -6,6 +6,9 @@ import unittest
 from ai.common.co_test_handler_fixture import CoTestHandlerFixture
 from rs.calculator.enums.card_id import CardId
 from rs.calculator.interfaces.memory_items import MemoryItem, ResetSchedule, StanceType
+from rs.common.comparators.act_one_boss_comparator import ActOneBossComparator
+from rs.common.comparators.big_fight_comparator import BigFightComparator
+from rs.common.comparators.common_general_comparator import CommonGeneralComparator
 from rs.common.comparators.gremlin_nob_comparator import GremlinNobComparator
 from rs.common.comparators.lagavulin_comparator import LagavulinComparator
 from rs.common.handlers.common_battle_handler import CommonBattleHandler
@@ -138,6 +141,29 @@ class BattleHandlerTestCase(CoTestHandlerFixture):
     def test_big_fight_higher_prio_powers(self):
         self.execute_handler_tests(
             'battles/specific_comparator_cases/big_fight/big_fight_prioritize_power_over_damage.json', ['play 1'])
+
+    def test_act_one_boss_uses_aggressive_comparator(self):
+        state = load_resource_state('/battles/general/burns.json')
+
+        comparator = CommonBattleHandler().select_comparator(state)
+
+        self.assertIsInstance(comparator, ActOneBossComparator)
+
+    def test_act_two_boss_uses_big_fight_comparator(self):
+        state = load_resource_state('/other/potions_boss.json')
+        state.game_state()['act'] = 2
+        state.game_state()['floor'] = 33
+
+        comparator = CommonBattleHandler().select_comparator(state)
+
+        self.assertIsInstance(comparator, BigFightComparator)
+
+    def test_act_one_slime_boss_keeps_general_comparator(self):
+        state = load_resource_state('/battles/general/no_energy_but_can_generate_some.json')
+
+        comparator = CommonBattleHandler().select_comparator(state)
+
+        self.assertIsInstance(comparator, CommonGeneralComparator)
 
     def test_some_powers_higher_prio_than_others(self):
         self.execute_handler_tests('battles/general/prioritize_accuracy_over_energized.json', ['play 2'])
